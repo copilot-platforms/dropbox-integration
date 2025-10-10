@@ -1,0 +1,1 @@
+export const MAX_FETCH_COPILOT_RESOURCES = 1_000

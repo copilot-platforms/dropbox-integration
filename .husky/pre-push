@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+# Typecheck & lint the whole codebase before push - saves us from having to catch lint errors in CI
+pnpm lint
+pnpm build # This also does typechecking
