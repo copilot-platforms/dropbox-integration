@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "dropbox-integration",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "build:all": "sh scripts/build/build.sh",
+    "start": "next start",
+    "clean-start": "next build --turbopack && next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "lint-staged": "lint-staged",
+    "prepare": "husky",
+    "ex": "tsx --tsconfig tsconfig.tsx.json --require dotenv/config --require tsconfig-paths/register"
+  },
+  "dependencies": {
+    "bottleneck": "^2.19.5",
+    "copilot-design-system": "^2.2.3",
+    "copilot-node-sdk": "^3.16.0",
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.5",
+    "drizzle-zod": "^0.8.3",
+    "http-status": "^2.1.0",
+    "next": "15.5.0",
+    "p-retry": "^7.0.0",
+    "postgres": "^3.4.7",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-linkify": "1.0.0-alpha",
+    "zod": "^4.1.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@commitlint/types": "^19.8.1",
+    "@supabase/supabase-js": "^2.56.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-linkify": "^1.0.4",
+    "drizzle-kit": "^0.31.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "server-only": "^0.0.1",
+    "supabase": "^2.39.2",
+    "tailwindcss": "^4",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css}": [
+      "pnpm format",
+      "pnpm lint"
+    ]
+  }
+}

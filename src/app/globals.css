@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --text-primary: #0e0f11;
+}
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: @theme is defined by Tailwind (https://tailwindcss.com/docs/theme) */
+@theme inline {
+  /* Backgrounds & fills */
+  --color-primary: var(--text-primary);
+  --color-secondary: #f8f9fb;
+  --color-warning: #fef6d0;
+  --color-border: #dfe1e4;
+  --color-card-border: #ededf0;
+  --color-button-primary: #212b36;
+  --color-button-disabled: #1f000000;
+  --color-card-divider: #ededf0;
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: #6b6f76;
+}
+
+/* prevent layout shift caused by scrollbar */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  color: var(--text-primary);
+  font-family: Inter, Arial, sans-serif;
+}

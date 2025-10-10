@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+# Lint staged changes before commit
+pnpm lint-staged
