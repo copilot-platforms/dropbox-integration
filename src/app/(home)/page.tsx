@@ -1,4 +1,5 @@
 import { Callout } from '@/features/auth/components/Callout'
+import { RealtimeDropboxConnections } from '@/features/auth/components/RealtimeDropboxConnections'
 import { AuthContextProvider } from '@/features/auth/context/AuthContext'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import { serializeClientUser } from '@/lib/copilot/models/ClientUser.model'
@@ -15,6 +16,7 @@ const Home = async ({ searchParams }: PageProps) => {
 
   return (
     <AuthContextProvider user={clientUser} connectionStatus={connection.status}>
+      <RealtimeDropboxConnections user={clientUser} />
       <Callout />
     </AuthContextProvider>
   )
