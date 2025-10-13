@@ -1,16 +1,23 @@
 import Script from 'next/script'
 import type { PageProps } from '@/app/(home)/types'
+import AuthService from '@/features/auth/lib/Auth.service'
+import User from '@/lib/copilot/models/User.model'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const CallbackPage = ({ searchParams }: PageProps) => {
-  console.info({ searchParams })
+const CallbackPage = async ({ searchParams }: PageProps) => {
+  const sp = await searchParams
+  const user = await User.authenticate(sp.state)
+  delete sp.state
+
+  const authService = new AuthService(user)
+  await authService.handleDropboxCallback(sp)
 
   return (
     <div className="px-2 py-4">
-      <div>Connecting Dropbox Integration...</div>
-      <Script id="drx-confirmation-close" strategy="afterInteractive">
+      Connecting Dropbox Integration...
+      <Script id="dpx-confirmation-close" strategy="afterInteractive">
         {`
           setTimeout(() => {
             window.close();
