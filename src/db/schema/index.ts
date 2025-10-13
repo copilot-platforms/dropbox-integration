@@ -1,1 +1,5 @@
-export const schema = {}
+import { dropboxConnections } from './dropboxConnections.schema'
+
+export const schema = {
+  dropboxConnections,
+}
