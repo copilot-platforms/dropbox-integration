@@ -1,4 +1,4 @@
-import { DropboxAuth } from 'dropbox'
+import { Dropbox, DropboxAuth } from 'dropbox'
 import { camelKeys } from 'js-convert-case'
 import env from '@/config/server.env'
 import { DropboxAuthResponseSchema, type DropboxAuthResponseType } from './type'
@@ -16,6 +16,18 @@ export class DropboxApi {
       clientId: env.DROPBOX_APP_KEY,
       clientSecret: env.DROPBOX_APP_SECRET,
     })
+  }
+
+  /**
+   * Function returns the instance of Dropbox client after checking and refreshing (if required) the access token
+   * @param refreshToken
+   * @returns instance of Dropbox client
+   * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
+   */
+  getDropboxClient(refreshToken: string): Dropbox {
+    this.dropboxAuth.setRefreshToken(refreshToken)
+    this.dropboxAuth.checkAndRefreshAccessToken()
+    return new Dropbox({ auth: this.dropboxAuth })
   }
 
   async getAuthUrl(state: string) {
