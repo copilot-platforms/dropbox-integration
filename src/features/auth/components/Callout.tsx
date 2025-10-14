@@ -3,6 +3,8 @@
 import { Button } from 'copilot-design-system'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
 
+export const authInitUrl = `/auth/initiate?token=`
+
 export const Callout = () => {
   const { user, connectionStatus } = useAuthContext()
 
@@ -11,9 +13,7 @@ export const Callout = () => {
       {!connectionStatus ? (
         <Button
           label="Initiate Dropbox connection"
-          onClick={() => {
-            window.open(`/auth/initiate?token=${user.token}`)
-          }}
+          onClick={() => window.open(`${authInitUrl}${user.token}`)}
         />
       ) : (
         <div className="font-bold text-xl">Connected to Dropbox</div>
