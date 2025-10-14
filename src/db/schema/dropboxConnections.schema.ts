@@ -17,9 +17,6 @@ export const dropboxConnections = pgTable(
     // refreshToken to refresh accessToken returned from DropboxAuth
     refreshToken: varchar({ length: 255 }),
 
-    // scope for granular control over what functionality is accessible
-    scope: varchar({ length: 255 }),
-
     // Connection status
     status: boolean().notNull().default(false),
 
