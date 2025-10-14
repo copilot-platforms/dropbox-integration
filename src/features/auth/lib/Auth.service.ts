@@ -1,5 +1,5 @@
 import BaseService from '@/lib/copilot/services/base.service'
-import { DropboxApi } from '@/lib/dropbox/dropboxApi'
+import { DropboxApi } from '@/lib/dropbox/DropboxApi'
 import type { DropboxAuthResponseType } from '@/lib/dropbox/type'
 import logger from '@/lib/logger'
 import DropboxConnectionsService from './DropboxConnections.service'
