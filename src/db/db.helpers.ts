@@ -15,16 +15,15 @@ type TableColumns<TTable extends AnyPgTable> = TTable['_']['columns']
  * Build strongly typed select field object from table and column names
  * The return type is the exact `{ colName: Column }` map Drizzle expects for select, return, etc
  */
-export const getSelectFields = <
+export const getTableFields = <
   TTable extends AnyPgTable,
   K extends readonly (keyof TableColumns<TTable>)[],
 >(
   table: TTable,
   keys: K,
 ): { [C in K[number]]: TableColumns<TTable>[C] } => {
-  // Drizzle stores columns on internal `_` symbol
-  const cols = table._?.columns as Record<string, AnyPgColumn>
-  const out: Record<string, AnyPgColumn> = {}
-  for (const k of keys as readonly string[]) out[k] = cols[k]
-  return out as { [C in K[number]]: TableColumns<TTable>[C] }
+  const obj: Record<string, AnyPgColumn> = {}
+  // @ts-expect-error Create a new object with key as elem of keys, and value from table (This is pretty safe, trust me - Roj)
+  for (const k of keys) obj[k] = table[k]
+  return obj as { [C in K[number]]: TableColumns<TTable>[C] }
 }

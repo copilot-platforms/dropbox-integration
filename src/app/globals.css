@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --text-primary: #0e0f11;
+  --text-primary: #212b36;
 }
 
 /* biome-ignore lint/suspicious/noUnknownAtRules: @theme is defined by Tailwind (https://tailwindcss.com/docs/theme) */
