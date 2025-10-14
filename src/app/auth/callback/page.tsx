@@ -1,5 +1,6 @@
 import Script from 'next/script'
 import type { PageProps } from '@/app/(home)/types'
+import { AuthError } from '@/features/auth/components/AuthError'
 import AuthService from '@/features/auth/lib/Auth.service'
 import User from '@/lib/copilot/models/User.model'
 
@@ -10,6 +11,10 @@ const CallbackPage = async ({ searchParams }: PageProps) => {
   const sp = await searchParams
   const user = await User.authenticate(sp.state)
   delete sp.state
+
+  if (sp.error) {
+    return <AuthError token={user.token} error={`${sp.error}: ${sp.error_description}`} />
+  }
 
   const authService = new AuthService(user)
   await authService.handleDropboxCallback(sp)
