@@ -3,7 +3,6 @@ CREATE TABLE "dropbox_connections" (
 	"portal_id" varchar(16) NOT NULL,
 	"account_id" varchar(100),
 	"refresh_token" varchar(255),
-	"scope" varchar(255),
 	"status" boolean DEFAULT false NOT NULL,
 	"initiated_by" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

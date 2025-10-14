@@ -1,5 +1,5 @@
 {
-  "id": "00e9f5d2-a663-459f-91b1-00a4ad464466",
+  "id": "af53ea14-baae-4900-b63c-53361d77a990",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -29,12 +29,6 @@
         },
         "refresh_token": {
           "name": "refresh_token",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "scope": {
-          "name": "scope",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
