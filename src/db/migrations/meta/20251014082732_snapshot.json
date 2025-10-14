@@ -1,5 +1,5 @@
 {
-  "id": "79c3e74c-54d4-4406-8d1b-0a77879f030a",
+  "id": "00e9f5d2-a663-459f-91b1-00a4ad464466",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -27,9 +27,15 @@
           "primaryKey": false,
           "notNull": false
         },
-        "token_set": {
-          "name": "token_set",
-          "type": "jsonb",
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },

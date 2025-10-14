@@ -1,10 +1,7 @@
-import { boolean, jsonb, pgTable, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import { boolean, pgTable, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
 import { timestamps } from '@/db/db.helpers'
-import type { DropboxAuthResponseType } from '@/lib/dropbox/type'
-
-export type DropboxTokenSetType = Omit<DropboxAuthResponseType, 'accountId'>
 
 export const dropboxConnections = pgTable(
   'dropbox_connections',
@@ -17,8 +14,11 @@ export const dropboxConnections = pgTable(
     // Unique account ID returned from DropboxAuth
     accountId: varchar({ length: 100 }),
 
-    // tokenset of refreshToken and scopes returned from DropboxAuth
-    tokenSet: jsonb().$type<DropboxTokenSetType>(),
+    // refreshToken to refresh accessToken returned from DropboxAuth
+    refreshToken: varchar({ length: 255 }),
+
+    // scope for granular control over what functionality is accessible
+    scope: varchar({ length: 255 }),
 
     // Connection status
     status: boolean().notNull().default(false),
@@ -33,9 +33,9 @@ export const dropboxConnections = pgTable(
 
 export const DropboxConnectionSchema = createSelectSchema(dropboxConnections)
 export type DropboxConnection = z.infer<typeof DropboxConnectionSchema>
-// Authenticated dropbox connection (must have valid tokenSet + accountId)
-export type DropboxConnectionWithTokenSet = DropboxConnection & {
-  tokenSet: DropboxTokenSetType
+// Authenticated dropbox connection (must have valid refreshToken + accountId)
+export type DropboxConnectionWithTokens = DropboxConnection & {
+  refreshToken: string
   accountId: string
 }
 
