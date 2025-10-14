@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import type { PageProps } from '@/app/(home)/types'
 import User from '@/lib/copilot/models/User.model'
-import { DropboxApi } from '@/lib/dropbox/dropboxApi'
+import { DropboxApi } from '@/lib/dropbox/DropboxApi'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
