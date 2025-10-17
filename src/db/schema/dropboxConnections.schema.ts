@@ -9,7 +9,7 @@ export const dropboxConnections = pgTable(
     id: uuid().primaryKey().notNull().defaultRandom(),
 
     // Workspace ID / Portal ID in Copilot
-    portalId: varchar({ length: 16 }).notNull(),
+    portalId: varchar({ length: 32 }).notNull(),
 
     // Unique account ID returned from DropboxAuth
     accountId: varchar({ length: 100 }),

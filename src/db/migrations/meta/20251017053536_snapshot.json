@@ -1,5 +1,5 @@
 {
-  "id": "af53ea14-baae-4900-b63c-53361d77a990",
+  "id": "2fe65975-a036-4108-af30-7e0d5383c351",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -17,7 +17,7 @@
         },
         "portal_id": {
           "name": "portal_id",
-          "type": "varchar(16)",
+          "type": "varchar(32)",
           "primaryKey": false,
           "notNull": true
         },
