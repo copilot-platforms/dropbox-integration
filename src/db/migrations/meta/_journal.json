@@ -8,6 +8,13 @@
       "when": 1760679337000,
       "tag": "20251017053536_add_dropbox_connections_table",
       "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761566252226,
+      "tag": "20251027115732_create_sync_tables",
+      "breakpoints": false
     }
   ]
 }

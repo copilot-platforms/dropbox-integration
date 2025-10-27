@@ -170,3 +170,14 @@ export const CopilotPriceSchema = z.object({
   productId: z.string(),
 })
 export type CopilotPrice = z.infer<typeof CopilotPriceSchema>
+
+export const CopilotFileCreateSchema = z.object({
+  channelId: z.string(),
+  id: z.string(),
+  name: z.string(),
+  object: z.string(),
+  path: z.string(),
+  status: z.string().optional(),
+  uploadUrl: z.string().optional(),
+})
+export type CreateFileType = z.infer<typeof CopilotFileCreateSchema>
