@@ -5,6 +5,8 @@ import { copilotApi } from 'copilot-node-sdk'
 import z from 'zod'
 import env from '@/config/server.env'
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
+import type { ObjectType } from '@/db/constants'
+import { putFetcher } from '@/helper/fetcher.helper'
 import {
   type ClientRequest,
   type ClientResponse,
@@ -15,11 +17,13 @@ import {
   type CompanyCreateRequest,
   type CompanyResponse,
   CompanyResponseSchema,
+  CopilotFileCreateSchema,
   type CopilotListArgs,
   type CopilotPrice,
   CopilotPriceSchema,
   type CopilotProduct,
   CopilotProductSchema,
+  type CreateFileType,
   type InternalUser,
   InternalUserSchema,
   type InternalUsersResponse,
@@ -174,6 +178,25 @@ export class CopilotAPI {
     }, {})
   }
 
+  async _createFile(
+    path: string,
+    channelId: string,
+    fileType: ObjectType,
+  ): Promise<CreateFileType> {
+    const createFileResponse = await this.copilot.createFile({
+      fileType,
+      requestBody: {
+        path,
+        channelId,
+      },
+    })
+    return CopilotFileCreateSchema.parse(createFileResponse)
+  }
+
+  async _uploadFile(url: string, body: ArrayBuffer) {
+    return await putFetcher(url, { body })
+  }
+
   private wrapWithRetry<Args extends unknown[], R>(
     fn: (...args: Args) => Promise<R>,
   ): (...args: Args) => Promise<R> {
@@ -197,4 +220,6 @@ export class CopilotAPI {
   createNotification = this.wrapWithRetry(this._createNotification)
   getProductsById = this.wrapWithRetry(this._getProducts)
   getPricesById = this.wrapWithRetry(this._getPrices)
+  createFile = this.wrapWithRetry(this._createFile)
+  uploadFile = this.wrapWithRetry(this._uploadFile)
 }

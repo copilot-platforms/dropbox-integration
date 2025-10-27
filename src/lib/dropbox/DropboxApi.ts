@@ -1,6 +1,7 @@
 import { Dropbox, DropboxAuth } from 'dropbox'
 import { camelKeys } from 'js-convert-case'
 import env from '@/config/server.env'
+import { withRetry } from '../copilot/withRetry'
 import { DropboxAuthResponseSchema, type DropboxAuthResponseType } from './type'
 
 export class DropboxApi {
@@ -18,15 +19,26 @@ export class DropboxApi {
     })
   }
 
+  refreshAccessToken(refreshToken: string) {
+    this.dropboxAuth.setRefreshToken(refreshToken)
+    this.dropboxAuth.checkAndRefreshAccessToken()
+  }
+
+  async _manualFetch(url: string, headers?: Record<string, string>, body?: string) {
+    return await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+  }
+
   /**
    * Function returns the instance of Dropbox client after checking and refreshing (if required) the access token
-   * @param refreshToken
    * @returns instance of Dropbox client
    * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
   getDropboxClient(refreshToken: string): Dropbox {
-    this.dropboxAuth.setRefreshToken(refreshToken)
-    this.dropboxAuth.checkAndRefreshAccessToken()
+    this.refreshAccessToken(refreshToken)
     return new Dropbox({ auth: this.dropboxAuth })
   }
 
@@ -56,4 +68,27 @@ export class DropboxApi {
     )
     return DropboxAuthResponseSchema.parse(camelKeys(tokenSet.result))
   }
+
+  async _downloadFile(urlPath: string, filePath: string) {
+    console.info({
+      acessToken: this.dropboxAuth.getAccessToken(),
+      rt: this.dropboxAuth.getRefreshToken(),
+    })
+    const headers = {
+      Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
+      'Dropbox-API-Arg': JSON.stringify({ path: filePath }),
+    }
+    const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
+    return await response.arrayBuffer()
+  }
+
+  private wrapWithRetry<Args extends unknown[], R>(
+    fn: (...args: Args) => Promise<R>,
+  ): (...args: Args) => Promise<R> {
+    return (...args: Args): Promise<R> => withRetry(fn.bind(this), args)
+  }
+
+  // Methods wrapped with retry
+  manualFetch = this.wrapWithRetry(this._manualFetch)
+  downloadFile = this.wrapWithRetry(this._downloadFile)
 }

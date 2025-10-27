@@ -9,6 +9,7 @@ const ServerEnvSchema = z.object({
   DROPBOX_APP_SECRET: z.string().min(1),
   DROPBOX_REDIRECT_URI: z.url(),
   DROPBOX_SCOPES: z.string().min(1),
+  DROPBOX_API_URL: z.url(),
 })
 
 const env = ServerEnvSchema.parse(process.env)

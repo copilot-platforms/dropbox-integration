@@ -31,10 +31,11 @@ export const dropboxConnections = pgTable(
 export const DropboxConnectionSchema = createSelectSchema(dropboxConnections)
 export type DropboxConnection = z.infer<typeof DropboxConnectionSchema>
 // Authenticated dropbox connection (must have valid refreshToken + accountId)
-export type DropboxConnectionWithTokens = DropboxConnection & {
+export type DropboxConnectionTokens = {
   refreshToken: string
   accountId: string
 }
+export type DropboxConnectionWithTokens = DropboxConnection & DropboxConnectionTokens
 
 export const DropboxConnectionInsertPayloadSchema = createInsertSchema(dropboxConnections)
 export type DropboxConnectionInsertPayload = z.infer<typeof DropboxConnectionInsertPayloadSchema>
