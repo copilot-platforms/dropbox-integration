@@ -5,7 +5,7 @@ import { copilotApi } from 'copilot-node-sdk'
 import z from 'zod'
 import env from '@/config/server.env'
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
-import type { ObjectType } from '@/db/constants'
+import type { ObjectTypeValue } from '@/db/constants'
 import { putFetcher } from '@/helper/fetcher.helper'
 import {
   type ClientRequest,
@@ -181,7 +181,7 @@ export class CopilotAPI {
   async _createFile(
     path: string,
     channelId: string,
-    fileType: ObjectType,
+    fileType: ObjectTypeValue,
   ): Promise<CreateFileType> {
     const createFileResponse = await this.copilot.createFile({
       fileType,

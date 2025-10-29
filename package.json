@@ -3,7 +3,8 @@
   "name": "dropbox-integration",
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "trigger:dev": "npx trigger.dev@4.0.4 dev",
+    "dev": "npx concurrently --kill-others --names \"next,trigger\" --prefix-colors \"yellow,blue\" \"next dev --turbopack\" \"npm run trigger:dev\"",
     "build": "next build --turbopack",
     "build:all": "sh scripts/build/build.sh",
     "start": "next start",
@@ -17,6 +18,7 @@
     "supabase:dev": "supabase start --ignore-health-check"
   },
   "dependencies": {
+    "@trigger.dev/sdk": "4.0.4",
     "bottleneck": "^2.19.5",
     "copilot-design-system": "^2.2.3",
     "copilot-node-sdk": "^3.16.0",
@@ -41,6 +43,7 @@
     "@commitlint/types": "^19.8.1",
     "@supabase/supabase-js": "^2.56.1",
     "@tailwindcss/postcss": "^4",
+    "@trigger.dev/build": "4.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -60,5 +63,6 @@
       "pnpm format",
       "pnpm lint"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.19.0+sha512.c9fc7236e92adf5c8af42fd5bf1612df99c2ceb62f27047032f4720b33f8eacdde311865e91c411f2774f618d82f320808ecb51718bfa82c060c4ba7c76a32b8"
 }

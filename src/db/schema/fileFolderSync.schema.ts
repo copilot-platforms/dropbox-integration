@@ -1,6 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import { pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
-import { createInsertSchema } from 'drizzle-zod'
+import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
+import type z from 'zod'
 import { enumToPgEnum, timestamps } from '@/db/db.helpers'
 import { ObjectType } from '../constants'
 import { channelSync } from './channelSync.schema'
@@ -22,5 +23,12 @@ export const fileFolderSync = pgTable('file_folder_sync', {
 })
 
 export const FileFolderCreateSchema = createInsertSchema(fileFolderSync)
-export type FileFolderCreateType = InferInsertModel<typeof fileFolderSync>
-export type FileFolderSelectType = InferSelectModel<typeof fileFolderSync>
+export type FileSyncCreateType = InferInsertModel<typeof fileFolderSync>
+export type FileSyncSelectType = InferSelectModel<typeof fileFolderSync>
+
+export const FileSyncUpdatePayloadSchema = createUpdateSchema(fileFolderSync).omit({
+  id: true,
+  portalId: true,
+  channelSyncId: true,
+})
+export type FileSyncUpdatePayload = z.infer<typeof FileSyncUpdatePayloadSchema>
