@@ -70,10 +70,6 @@ export class DropboxApi {
   }
 
   async _downloadFile(urlPath: string, filePath: string) {
-    console.info({
-      acessToken: this.dropboxAuth.getAccessToken(),
-      rt: this.dropboxAuth.getRefreshToken(),
-    })
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
       'Dropbox-API-Arg': JSON.stringify({ path: filePath }),
