@@ -1,5 +1,5 @@
 {
-  "id": "3900f8b1-7e6b-4724-99bd-71572072e942",
+  "id": "2a14d4c8-8cf4-4d54-b1d6-61a043409fbb",
   "prevId": "2fe65975-a036-4108-af30-7e0d5383c351",
   "version": "7",
   "dialect": "postgresql",
@@ -199,15 +199,15 @@
           "primaryKey": false,
           "notNull": false
         },
-        "dbx_ff_id": {
-          "name": "dbx_ff_id",
+        "dbx_file_id": {
+          "name": "dbx_file_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
-        "ff_id": {
-          "name": "ff_id",
-          "type": "varchar",
+        "assembly_file_id": {
+          "name": "assembly_file_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -234,8 +234,8 @@
           "tableTo": "channel_sync",
           "columnsFrom": ["channel_sync_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {},

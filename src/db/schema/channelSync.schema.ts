@@ -1,8 +1,9 @@
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm'
 import { boolean, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
 import { timestamps } from '@/db/db.helpers'
+import { fileFolderSync } from './fileFolderSync.schema'
 
 export const channelSync = pgTable('channel_sync', {
   id: uuid().primaryKey().notNull().defaultRandom(),
@@ -14,6 +15,10 @@ export const channelSync = pgTable('channel_sync', {
   status: boolean().notNull().default(false), // Connection status
   ...timestamps,
 })
+
+export const ChannelSyncRelations = relations(channelSync, ({ many }) => ({
+  fileSync: many(fileFolderSync),
+}))
 
 export const ChannelSyncCreateSchema = createInsertSchema(channelSync)
 export type ChannelSyncCreateType = InferInsertModel<typeof channelSync>
