@@ -48,7 +48,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
 
   async getMappedDbxFile(filePath: string, dbxId: string, channelSyncId: string) {
     const mappedFiles = await this.getAllFileMaps(eq(fileFolderSync.channelSyncId, channelSyncId))
-    return mappedFiles.find((file) => file.itemPath === filePath && file.dbxFfId === dbxId)
+    return mappedFiles.find((file) => file.itemPath === filePath && file.dbxFileId === dbxId)
   }
 
   async getOrCreateChannelMap(

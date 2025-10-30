@@ -146,7 +146,7 @@ export class SyncService extends AuthenticatedDropboxService {
         channelSyncId,
         itemPath,
         object: tempFileType,
-        ffId: fileCreateResponse.id,
+        assemblyFileId: fileCreateResponse.id,
         portalId: this.user.portalId,
       }
 
@@ -163,7 +163,7 @@ export class SyncService extends AuthenticatedDropboxService {
 
       await this.mapFilesService.insertFileMap({
         ...filePayload,
-        dbxFfId: lastItem ? entry.id : null,
+        dbxFileId: lastItem ? entry.id : null,
       })
     } catch (error: unknown) {
       if (
@@ -188,7 +188,7 @@ export class SyncService extends AuthenticatedDropboxService {
 
   /**
    * purpose: checks if the item is last item of the folder heirarchy and the entry is a folder.
-   * if yes, update the dbxFfId to the table
+   * if yes, update the dbxFileId to the table
    */
   private async handleFolderCreatedCase(
     lastItem: boolean,
@@ -203,10 +203,10 @@ export class SyncService extends AuthenticatedDropboxService {
         eq(fileFolderSync.itemPath, basePath),
       ) as WhereClause
 
-      // update the dbxFfId to the table
+      // update the dbxFileId to the table
       await this.mapFilesService.updateFileMap(
         {
-          dbxFfId: entryId,
+          dbxFileId: entryId,
         },
         fileMapCondition,
       )

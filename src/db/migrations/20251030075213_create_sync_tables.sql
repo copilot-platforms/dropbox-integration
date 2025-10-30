@@ -18,10 +18,10 @@ CREATE TABLE "file_folder_sync" (
 	"item_path" varchar,
 	"object" "object_types" DEFAULT 'file' NOT NULL,
 	"content_hash" varchar,
-	"dbx_ff_id" varchar,
-	"ff_id" varchar,
+	"dbx_file_id" varchar,
+	"assembly_file_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
-ALTER TABLE "file_folder_sync" ADD CONSTRAINT "file_folder_sync_channel_sync_id_channel_sync_id_fk" FOREIGN KEY ("channel_sync_id") REFERENCES "public"."channel_sync"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "file_folder_sync" ADD CONSTRAINT "file_folder_sync_channel_sync_id_channel_sync_id_fk" FOREIGN KEY ("channel_sync_id") REFERENCES "public"."channel_sync"("id") ON DELETE cascade ON UPDATE cascade;
