@@ -1,5 +1,5 @@
 {
-  "id": "e6207654-1f77-4e5d-8634-5944bbd076e9",
+  "id": "3900f8b1-7e6b-4724-99bd-71572072e942",
   "prevId": "2fe65975-a036-4108-af30-7e0d5383c351",
   "version": "7",
   "dialect": "postgresql",
@@ -41,18 +41,6 @@
         },
         "dbx_cursor": {
           "name": "dbx_cursor",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pause_cursor": {
-          "name": "pause_cursor",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "current_cursor": {
-          "name": "current_cursor",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false

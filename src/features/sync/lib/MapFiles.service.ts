@@ -51,7 +51,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return mappedFiles.find((file) => file.itemPath === filePath && file.dbxFfId === dbxId)
   }
 
-  async getChannelMap(
+  async getOrCreateChannelMap(
     payload: Omit<ChannelSyncCreateType, 'portalId'>,
   ): Promise<ChannelSyncSelectType> {
     let [channel] = await db
@@ -67,7 +67,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     if (!channel) {
       const newChannel = await db
         .insert(channelSync)
-        .values({ ...payload, portalId: this.user.portalId })
+        .values({ ...payload, portalId: this.user.portalId, status: true })
         .returning()
       channel = newChannel[0]
     }

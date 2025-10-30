@@ -11,8 +11,6 @@ export const channelSync = pgTable('channel_sync', {
   assemblyChannelId: varchar({ length: 255 }).notNull(), // Assembly channel ID
   dbxRootPath: varchar().notNull(),
   dbxCursor: varchar(),
-  pauseCursor: varchar(),
-  currentCursor: varchar(),
   status: boolean().notNull().default(false), // Connection status
   ...timestamps,
 })

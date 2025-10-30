@@ -6,8 +6,6 @@ CREATE TABLE "channel_sync" (
 	"assembly_channel_id" varchar(255) NOT NULL,
 	"dbx_root_path" varchar NOT NULL,
 	"dbx_cursor" varchar,
-	"pause_cursor" varchar,
-	"current_cursor" varchar,
 	"status" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
