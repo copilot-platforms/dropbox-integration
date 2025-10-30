@@ -44,7 +44,7 @@ export class SyncService extends AuthenticatedDropboxService {
       assemblyChannelId,
       dbxRootPath,
     }
-    const channelMap = await this.mapFilesService.getChannelMap(channelPayload)
+    const channelMap = await this.mapFilesService.getOrCreateChannelMap(channelPayload)
 
     // 1. get all the files folder from dropbox
     const dbxApi = new DropboxApi()
