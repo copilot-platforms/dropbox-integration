@@ -27,3 +27,11 @@ export const getTableFields = <
   for (const k of keys) obj[k] = table[k]
   return obj as { [C in K[number]]: TableColumns<TTable>[C] }
 }
+
+// biome-ignore lint/suspicious/noExplicitAny: this function intentionally uses any for flexibility
+export function enumToPgEnum<T extends Record<string, any>>(
+  myEnum: T,
+): [T[keyof T], ...T[keyof T][]] {
+  // biome-ignore lint/suspicious/noExplicitAny: this is pretty safe
+  return Object.values(myEnum).map((value: any) => `${value}`) as [T[keyof T], ...T[keyof T][]]
+}
