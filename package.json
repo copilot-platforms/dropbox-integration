@@ -22,6 +22,7 @@
     "bottleneck": "^2.19.5",
     "copilot-design-system": "^2.2.3",
     "copilot-node-sdk": "^3.16.0",
+    "dayjs": "^1.11.19",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",

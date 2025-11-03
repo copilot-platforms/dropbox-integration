@@ -1,8 +1,9 @@
 import type { SQL } from 'drizzle-orm'
 import z from 'zod'
+import type { ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import type User from '@/lib/copilot/models/User.model'
-// import type { SyncService } from './lib/Sync.service'
+import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 
 export type WhereClause = SQL<unknown>
 
@@ -25,8 +26,7 @@ export type DropboxFileListFolderResultEntries = z.infer<
   typeof DropboxFileListFolderResultEntriesSchema
 >
 
-export type DropboxToAssemblySyncTaskPayload = {
-  resultEntries: DropboxFileListFolderResultEntries
+export type AdditionalSyncPayload = {
   dbxRootPath: string
   assemblyChannelId: string
   channelSyncId: string
@@ -36,5 +36,10 @@ export type DropboxToAssemblySyncTaskPayload = {
 
 export type DropboxToAssemblySyncFilesPayload = {
   entry: DropboxFileListFolderSingleEntry
-  opts: Omit<DropboxToAssemblySyncTaskPayload, 'resultEntries'>
+  opts: AdditionalSyncPayload
+}
+
+export type AssemblyToDropboxSyncFilesPayload = {
+  file: CopilotFileRetrieve & { object: ObjectTypeValue }
+  opts: AdditionalSyncPayload
 }
