@@ -1,1 +1,1 @@
-export const MAX_FILES_LIMIT = 500
+export const MAX_FILES_LIMIT = 150

@@ -6,6 +6,7 @@ import z from 'zod'
 import env from '@/config/server.env'
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
 import type { ObjectTypeValue } from '@/db/constants'
+import { MAX_FILES_LIMIT } from '@/features/sync/constant'
 import { putFetcher } from '@/helper/fetcher.helper'
 import {
   type ClientRequest,
@@ -18,6 +19,8 @@ import {
   type CompanyResponse,
   CompanyResponseSchema,
   CopilotFileCreateSchema,
+  type CopilotFileList,
+  CopilotFileListSchema,
   type CopilotListArgs,
   type CopilotPrice,
   CopilotPriceSchema,
@@ -197,6 +200,11 @@ export class CopilotAPI {
     return await putFetcher(url, { body })
   }
 
+  async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {
+    const list = await this.copilot.listFiles({ channelId, nextToken, limit: MAX_FILES_LIMIT })
+    return CopilotFileListSchema.parse(list)
+  }
+
   private wrapWithRetry<Args extends unknown[], R>(
     fn: (...args: Args) => Promise<R>,
   ): (...args: Args) => Promise<R> {
@@ -222,4 +230,5 @@ export class CopilotAPI {
   getPricesById = this.wrapWithRetry(this._getPrices)
   createFile = this.wrapWithRetry(this._createFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
+  listFiles = this.wrapWithRetry(this._listFiles)
 }

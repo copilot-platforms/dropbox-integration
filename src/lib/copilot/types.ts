@@ -181,3 +181,20 @@ export const CopilotFileCreateSchema = z.object({
   uploadUrl: z.string().optional(),
 })
 export type CreateFileType = z.infer<typeof CopilotFileCreateSchema>
+
+export const CopilotFileRetrieveSchema = z.object({
+  id: z.uuid(),
+  channelId: z.string(),
+  name: z.string(),
+  object: z.string(),
+  path: z.string(),
+  status: z.string().optional(),
+  downloadUrl: z.string().optional(),
+})
+export type CopilotFileRetrieve = z.infer<typeof CopilotFileRetrieveSchema>
+
+export const CopilotFileListSchema = z.object({
+  data: z.array(CopilotFileRetrieveSchema),
+  nextToken: z.string().optional(),
+})
+export type CopilotFileList = z.infer<typeof CopilotFileListSchema>
