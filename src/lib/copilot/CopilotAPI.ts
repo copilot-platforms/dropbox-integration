@@ -196,8 +196,8 @@ export class CopilotAPI {
     return CopilotFileCreateSchema.parse(createFileResponse)
   }
 
-  async _uploadFile(url: string, body: ArrayBuffer) {
-    return await putFetcher(url, { body })
+  async _uploadFile(url: string, body: NodeJS.ReadableStream | null) {
+    return await putFetcher(url, { body, duplex: 'half' }) // duplex: half for readable stream
   }
 
   async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {

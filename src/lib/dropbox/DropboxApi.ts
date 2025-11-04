@@ -1,8 +1,13 @@
 import { Dropbox, DropboxAuth } from 'dropbox'
 import { camelKeys } from 'js-convert-case'
+import fetch from 'node-fetch'
 import env from '@/config/server.env'
-import { withRetry } from '../copilot/withRetry'
-import { DropboxAuthResponseSchema, type DropboxAuthResponseType } from './type'
+import {
+  DropboxAuthResponseSchema,
+  type DropboxAuthResponseType,
+  type DropboxFileMetadata,
+  DropboxFileMetadataSchema,
+} from './type'
 
 export class DropboxApi {
   private readonly dropboxAuth: DropboxAuth
@@ -24,11 +29,17 @@ export class DropboxApi {
     this.dropboxAuth.checkAndRefreshAccessToken()
   }
 
-  async _manualFetch(url: string, headers?: Record<string, string>, body?: string) {
+  async _manualFetch(
+    url: string,
+    headers?: Record<string, string>,
+    body?: NodeJS.ReadableStream | null,
+    otherOptions?: Record<string, string>,
+  ) {
     return await fetch(url, {
       method: 'POST',
       headers,
       body,
+      ...otherOptions,
     })
   }
 
@@ -69,22 +80,32 @@ export class DropboxApi {
     return DropboxAuthResponseSchema.parse(camelKeys(tokenSet.result))
   }
 
-  async _downloadFile(urlPath: string, filePath: string) {
+  async downloadFile(urlPath: string, filePath: string) {
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
       'Dropbox-API-Arg': JSON.stringify({ path: filePath }),
     }
     const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
-    return await response.arrayBuffer()
+    return response.body
   }
 
-  private wrapWithRetry<Args extends unknown[], R>(
-    fn: (...args: Args) => Promise<R>,
-  ): (...args: Args) => Promise<R> {
-    return (...args: Args): Promise<R> => withRetry(fn.bind(this), args)
+  async uploadFile(
+    urlPath: string,
+    filePath: string,
+    body: NodeJS.ReadableStream | null,
+  ): Promise<DropboxFileMetadata> {
+    const headers = {
+      Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
+      'Dropbox-API-Arg': JSON.stringify({
+        path: filePath,
+        autorename: false,
+        mode: 'add',
+      }),
+      'Content-Type': 'application/octet-stream',
+    }
+    const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body, {
+      duplex: 'half',
+    })
+    return DropboxFileMetadataSchema.parse(camelKeys(await response.json()))
   }
-
-  // Methods wrapped with retry
-  manualFetch = this.wrapWithRetry(this._manualFetch)
-  downloadFile = this.wrapWithRetry(this._downloadFile)
 }
