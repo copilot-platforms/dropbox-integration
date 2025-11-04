@@ -44,6 +44,9 @@ importers:
       next:
         specifier: 15.5.0
         version: 15.5.0(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      node-fetch:
+        specifier: ^3.3.2
+        version: 3.3.2
       p-retry:
         specifier: ^7.0.0
         version: 7.0.0

@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { type Dropbox, DropboxResponseError } from 'dropbox'
+import { DropboxResponseError } from 'dropbox'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
@@ -92,13 +92,12 @@ export class SyncService extends AuthenticatedDropboxService {
       }
 
       if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
-        const dbxArrayBuffer = await this.dbxApi.downloadFile(
+        const dbxFileResponse = await this.dbxApi.downloadFile(
           '/2/files/download',
           entry?.path_display,
         )
         // upload file to assembly
-        await copilotApi.uploadFile(fileCreateResponse.uploadUrl, dbxArrayBuffer)
-
+        await copilotApi.uploadFile(fileCreateResponse.uploadUrl, dbxFileResponse)
         filePayload.contentHash = entry.content_hash
       }
 
@@ -196,7 +195,7 @@ export class SyncService extends AuthenticatedDropboxService {
           to_path: newFilePath,
         })
 
-        return await this.uploadFileInDropbox(file, dbxFilePath, dbxClient)
+        return await this.uploadFileInDropbox(file, dbxFilePath)
       }
     } catch (error: unknown) {
       // 2. if doesn't exist, create the file/folder
@@ -211,24 +210,20 @@ export class SyncService extends AuthenticatedDropboxService {
           })
           return { dbxFileId: folderCreateResponse.result.metadata.id }
         } else if (fileType === ObjectType.FILE) {
-          return await this.uploadFileInDropbox(file, dbxFilePath, dbxClient)
+          return await this.uploadFileInDropbox(file, dbxFilePath)
         }
       }
       throw error
     }
   }
 
-  private async uploadFileInDropbox(file: CopilotFileRetrieve, path: string, dbxClient: Dropbox) {
+  private async uploadFileInDropbox(file: CopilotFileRetrieve, path: string) {
     if (file.downloadUrl) {
       // download file from Assembly
       const resp = await getFetcher(file.downloadUrl)
-      const buffer = await resp.arrayBuffer()
       // upload file to dropbox
-      const dbxResponse = await dbxClient.filesUpload({
-        contents: buffer,
-        path,
-      })
-      return { dbxFileId: dbxResponse.result.id, contentHash: dbxResponse.result.content_hash }
+      const dbxResponse = await this.dbxApi.uploadFile('/2/files/upload', path, resp.body)
+      return { dbxFileId: dbxResponse.id, contentHash: dbxResponse.contentHash }
     }
     throw new Error('File not found')
   }

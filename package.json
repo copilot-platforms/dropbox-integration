@@ -30,6 +30,7 @@
     "http-status": "^2.1.0",
     "js-convert-case": "^4.2.0",
     "next": "15.5.0",
+    "node-fetch": "^3.3.2",
     "p-retry": "^7.0.0",
     "postgres": "^3.4.7",
     "react": "19.1.0",
