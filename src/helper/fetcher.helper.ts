@@ -1,7 +1,12 @@
-export const putFetcher = async (url: string, body: Record<string, string | ArrayBuffer>) => {
+import fetch from 'node-fetch'
+
+export const putFetcher = async (
+  url: string,
+  options: Record<string, string | NodeJS.ReadableStream | null>,
+) => {
   return await fetch(url, {
     method: 'PUT',
-    ...body,
+    ...options,
   })
 }
 
