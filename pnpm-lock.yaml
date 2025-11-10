@@ -14,9 +14,12 @@ importers:
       bottleneck:
         specifier: ^2.19.5
         version: 2.19.5
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       copilot-design-system:
-        specifier: ^2.2.3
-        version: 2.2.3(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+        specifier: ^2.2.6
+        version: 2.2.6(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       copilot-node-sdk:
         specifier: ^3.16.0
         version: 3.16.0(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -62,6 +65,9 @@ importers:
       react-linkify:
         specifier: 1.0.0-alpha
         version: 1.0.0-alpha
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
       zod:
         specifier: ^4.1.1
         version: 4.1.1
@@ -1581,8 +1587,8 @@ packages:
     resolution: {integrity: sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==}
     engines: {node: '>= 0.6'}
 
-  copilot-design-system@2.2.3:
-    resolution: {integrity: sha512-F/oPHLIVqwPQ6wtuufPHGUf9u3jlPgd0JtuCEQj23JgHFN9u7X0afB92+bGbi3t31WLo5rkzzPmuDpEthD31Zg==}
+  copilot-design-system@2.2.6:
+    resolution: {integrity: sha512-5q20q7lbc3eoycuv1W+2jB8LwnOY5esOg4g2hALnEn3XMdPHWWj4Hcx4DIDyZaRPei1xjdB8hRLBBJnuVa400g==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0
       react-dom: ^17.0.0 || ^18.0.0
@@ -2714,6 +2720,9 @@ packages:
 
   tailwind-merge@2.6.0:
     resolution: {integrity: sha512-P+Vu1qXfzediirmHOC3xKGAYeZtPcV9g76X+xg2FD4tYgR71ewMA35Y3sCz3zhiN/dwefRpJX0yBcgwi1fXNQA==}
+
+  tailwind-merge@3.3.1:
+    resolution: {integrity: sha512-gBXpgUm/3rp1lMZZrM/w7D8GKqshif0zAymAhbCyIt8KMe+0v9DQ7cdYLR4FHH/cKpdTXb+A/tKKU3eolfsI+g==}
 
   tailwindcss@4.1.12:
     resolution: {integrity: sha512-DzFtxOi+7NsFf7DBtI3BJsynR+0Yp6etH+nRPTbpWnS2pZBaSksv/JGctNwSWzbFjp0vxSqknaUylseZqMDGrA==}
@@ -4228,7 +4237,7 @@ snapshots:
 
   cookie@0.4.2: {}
 
-  copilot-design-system@2.2.3(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2):
+  copilot-design-system@2.2.6(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2):
     dependencies:
       '@radix-ui/react-avatar': 1.1.10(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@radix-ui/react-toast': 1.2.15(@types/react-dom@19.1.7(@types/react@19.1.11))(@types/react@19.1.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -5308,6 +5317,8 @@ snapshots:
   supports-preserve-symlinks-flag@1.0.0: {}
 
   tailwind-merge@2.6.0: {}
+
+  tailwind-merge@3.3.1: {}
 
   tailwindcss@4.1.12: {}
 
