@@ -2,7 +2,7 @@ import type { NextConfig } from 'next'
 
 const nextConfig = {
   // Ngrok tunnel for local dev testing (sndp)
-  allowedDevOrigins: ['https://noiselessly-atlantal-lani.ngrok-free.app'],
+  allowedDevOrigins: ['https://communal-griffon-violently.ngrok-free.app'],
   // biome-ignore lint/suspicious/useAwait: `headers` needs to be async
   headers: async () => {
     return [

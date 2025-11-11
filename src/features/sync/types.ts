@@ -3,7 +3,7 @@ import z from 'zod'
 import type { ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import type User from '@/lib/copilot/models/User.model'
-import type { CopilotFileRetrieve } from '@/lib/copilot/types'
+import type { CopilotFileRetrieve, UserCompanySelectorInputValue } from '@/lib/copilot/types'
 
 export type WhereClause = SQL<unknown>
 
@@ -42,4 +42,88 @@ export type DropboxToAssemblySyncFilesPayload = {
 export type AssemblyToDropboxSyncFilesPayload = {
   file: CopilotFileRetrieve & { object: ObjectTypeValue }
   opts: AdditionalSyncPayload
+}
+
+export type UserChannelType = 'client' | 'company'
+
+export const ClientSchema = z.object({
+  id: z.string(),
+  givenName: z.string(),
+  familyName: z.string(),
+  email: z.string(),
+  companyId: z.string().optional(),
+  status: z.string(),
+  avatarImageUrl: z.string().optional(),
+  fallbackColor: z.string(),
+  companyIds: z.array(z.string()),
+})
+export const ClientsResponseSchema = z.array(ClientSchema)
+export type Client = z.infer<typeof ClientSchema> & { type: UserChannelType }
+
+export const CompanySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconImageUrl: z.string().optional(),
+  fallbackColor: z.string().optional(),
+})
+export const CompaniesResponseSchema = z.array(CompanySchema)
+export type Company = z.infer<typeof CompanySchema> & { type: UserChannelType }
+
+export type UserClientsCompanies = {
+  clients?: Omit<Client, 'type'>[]
+  companies?: Omit<Company, 'type'>[]
+}
+
+export type UserClientsCompaniesWithType = {
+  clients?: Client[]
+  companies?: Company[]
+}
+
+export type SelectorValue = {
+  value: string | null
+  label: string
+  avatarSrc?: string
+  avatarFallbackColor?: string
+  companyId?: string
+  type: UserChannelType
+}
+
+export type SelectorClientsCompanies = {
+  clients?: SelectorValue[]
+  companies?: SelectorValue[]
+}
+
+export type Folder = {
+  path: string
+  label: string
+  children?: Folder[]
+}
+
+export const FileSyncCreateSchema = z.object({
+  user: z.array(
+    z.object({
+      id: z.string(),
+      companyId: z.string(),
+      object: z.string(),
+    }),
+  ),
+  dbxRootPath: z.string(),
+})
+export type FileSyncCreateType = z.infer<typeof FileSyncCreateSchema>
+
+export const DropdownFileChannelSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+  avatarSrc: z.string().nullable(),
+  fallbackColor: z.string().nullish(),
+  companyId: z.string().nullable(),
+})
+export type DropdownFileChannel = z.infer<typeof DropdownFileChannelSchema>
+
+export type MapList = {
+  fileChannelDetail: SelectorValue[]
+  fileChannelValue: UserCompanySelectorInputValue[]
+  dbxRoothPath: string
+  status: boolean | null
+  fileChannelId: string
 }

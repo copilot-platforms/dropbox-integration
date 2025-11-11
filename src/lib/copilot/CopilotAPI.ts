@@ -18,6 +18,8 @@ import {
   type CompanyCreateRequest,
   type CompanyResponse,
   CompanyResponseSchema,
+  CopilotFileChannelListSchema,
+  CopilotFileChannelRetrieveSchema,
   CopilotFileCreateSchema,
   type CopilotFileList,
   CopilotFileListSchema,
@@ -209,6 +211,16 @@ export class CopilotAPI {
     return CopilotFileListSchema.parse(list)
   }
 
+  async _retrieveFileChannel(id: string) {
+    const fileChannel = await this.copilot.retrieveFileChannel({ id })
+    return CopilotFileChannelRetrieveSchema.parse(fileChannel)
+  }
+
+  async _listFileChannels(args: CopilotListArgs & { companyId?: string; clientId?: string } = {}) {
+    const list = await this.copilot.listFileChannels(args)
+    return CopilotFileChannelListSchema.parse(list.data)
+  }
+
   private wrapWithRetry<Args extends unknown[], R>(
     fn: (...args: Args) => Promise<R>,
   ): (...args: Args) => Promise<R> {
@@ -235,4 +247,6 @@ export class CopilotAPI {
   createFile = this.wrapWithRetry(this._createFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
   listFiles = this.wrapWithRetry(this._listFiles)
+  retrieveFileChannel = this.wrapWithRetry(this._retrieveFileChannel)
+  listFileChannels = this.wrapWithRetry(this._listFileChannels)
 }

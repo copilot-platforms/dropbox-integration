@@ -27,10 +27,7 @@ export class SyncService extends AuthenticatedDropboxService {
     this.mapFilesService = new MapFilesService(user, connectionToken)
   }
 
-  async initiateSync(assemblyChannelId: string) {
-    // expect assembly channel and dropbox folder path Inputs.
-    const dbxRootPath = '/Assembly'
-
+  async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
     // bidrectional sync
     await bidirectionalMasterSync.trigger({
       dbxRootPath,
@@ -240,5 +237,23 @@ export class SyncService extends AuthenticatedDropboxService {
       }
     }
     throw new Error('File not found')
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix for now
+  async getFileChannel(user: any) {
+    // biome-ignore lint/suspicious/noExplicitAny: TODO: fix for now
+    let payload: any
+    if (user.object === 'client') {
+      payload = {
+        clientId: user.id,
+        companyId: user.companyId,
+      }
+    } else {
+      payload = {
+        companyId: user.companyId,
+      }
+    }
+    const fileChannel = await this.copilot.listFileChannels(payload)
+    return fileChannel[0].id
   }
 }

@@ -30,3 +30,16 @@ body {
   color: var(--text-primary);
   font-family: Inter, Arial, sans-serif;
 }
+
+/* Undo preflight for specific elements.*/
+@layer base {
+  /* Revert and restore styles for svg element */
+  svg {
+    all: revert;
+    fill: none;
+  }
+}
+
+.css-b62m3t-container .css-cp01gg-control {
+  padding: 0px 9px !important;
+}
