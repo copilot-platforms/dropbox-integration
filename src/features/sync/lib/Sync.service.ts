@@ -27,10 +27,7 @@ export class SyncService extends AuthenticatedDropboxService {
     this.mapFilesService = new MapFilesService(user, connectionToken)
   }
 
-  async initiateSync(assemblyChannelId: string) {
-    // expect assembly channel and dropbox folder path Inputs.
-    const dbxRootPath = '/Assembly'
-
+  async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
     // bidrectional sync
     await bidirectionalMasterSync.trigger({
       dbxRootPath,
@@ -92,12 +89,23 @@ export class SyncService extends AuthenticatedDropboxService {
       }
 
       if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
-        const dbxFileResponse = await this.dbxApi.downloadFile(
+        const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+        const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
+
+        // TODO: make sure the file binary is present in fileMetaData
+
+        const downloadBody = await this.dbxApi.downloadFile(
           '/2/files/download',
           entry?.path_display,
         )
         // upload file to assembly
-        await copilotApi.uploadFile(fileCreateResponse.uploadUrl, dbxFileResponse)
+        await copilotApi.uploadFile(
+          fileCreateResponse.uploadUrl,
+          {
+            'Content-Length': fileMetaData.result.size.toString(), // need to set the content length to stream the file to s3 bucket
+          },
+          downloadBody,
+        )
         filePayload.contentHash = entry.content_hash
       }
 
@@ -223,8 +231,29 @@ export class SyncService extends AuthenticatedDropboxService {
       const resp = await getFetcher(file.downloadUrl)
       // upload file to dropbox
       const dbxResponse = await this.dbxApi.uploadFile('/2/files/upload', path, resp.body)
-      return { dbxFileId: dbxResponse.id, contentHash: dbxResponse.contentHash }
+      return {
+        dbxFileId: dbxResponse.id,
+        contentHash: dbxResponse.contentHash,
+      }
     }
     throw new Error('File not found')
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix for now
+  async getFileChannel(user: any) {
+    // biome-ignore lint/suspicious/noExplicitAny: TODO: fix for now
+    let payload: any
+    if (user.object === 'client') {
+      payload = {
+        clientId: user.id,
+        companyId: user.companyId,
+      }
+    } else {
+      payload = {
+        companyId: user.companyId,
+      }
+    }
+    const fileChannel = await this.copilot.listFileChannels(payload)
+    return fileChannel[0].id
   }
 }

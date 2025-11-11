@@ -18,6 +18,8 @@ import {
   type CompanyCreateRequest,
   type CompanyResponse,
   CompanyResponseSchema,
+  CopilotFileChannelListSchema,
+  CopilotFileChannelRetrieveSchema,
   CopilotFileCreateSchema,
   type CopilotFileList,
   CopilotFileListSchema,
@@ -196,13 +198,27 @@ export class CopilotAPI {
     return CopilotFileCreateSchema.parse(createFileResponse)
   }
 
-  async _uploadFile(url: string, body: NodeJS.ReadableStream | null) {
-    return await putFetcher(url, { body, duplex: 'half' }) // duplex: half for readable stream
+  async _uploadFile(
+    url: string,
+    headers: Record<string, string>,
+    body: NodeJS.ReadableStream | null,
+  ) {
+    return await putFetcher(url, headers, { body, duplex: 'half' }) // duplex: half for readable stream
   }
 
   async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {
     const list = await this.copilot.listFiles({ channelId, nextToken, limit: MAX_FILES_LIMIT })
     return CopilotFileListSchema.parse(list)
+  }
+
+  async _retrieveFileChannel(id: string) {
+    const fileChannel = await this.copilot.retrieveFileChannel({ id })
+    return CopilotFileChannelRetrieveSchema.parse(fileChannel)
+  }
+
+  async _listFileChannels(args: CopilotListArgs & { companyId?: string; clientId?: string } = {}) {
+    const list = await this.copilot.listFileChannels(args)
+    return CopilotFileChannelListSchema.parse(list.data)
   }
 
   private wrapWithRetry<Args extends unknown[], R>(
@@ -231,4 +247,6 @@ export class CopilotAPI {
   createFile = this.wrapWithRetry(this._createFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
   listFiles = this.wrapWithRetry(this._listFiles)
+  retrieveFileChannel = this.wrapWithRetry(this._retrieveFileChannel)
+  listFileChannels = this.wrapWithRetry(this._listFileChannels)
 }
