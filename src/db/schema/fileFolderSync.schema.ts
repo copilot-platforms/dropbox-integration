@@ -2,9 +2,9 @@ import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle
 import { pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
+import { ObjectType } from '@/db/constants'
 import { enumToPgEnum, timestamps } from '@/db/db.helpers'
-import { ObjectType } from '../constants'
-import { channelSync } from './channelSync.schema'
+import { channelSync } from '@/db/schema/channelSync.schema'
 
 export const ObjectEnum = pgEnum('object_types', enumToPgEnum(ObjectType))
 

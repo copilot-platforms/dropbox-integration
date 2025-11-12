@@ -1,8 +1,8 @@
+import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import BaseService from '@/lib/copilot/services/base.service'
 import { DropboxApi } from '@/lib/dropbox/DropboxApi'
 import type { DropboxAuthResponseType } from '@/lib/dropbox/type'
 import logger from '@/lib/logger'
-import DropboxConnectionsService from './DropboxConnections.service'
 
 class AuthService extends BaseService {
   async handleDropboxCallback(urlParams: Record<string, string | string[] | undefined>) {

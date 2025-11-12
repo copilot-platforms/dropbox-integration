@@ -4,6 +4,14 @@ import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
+import { DBX_URL_PATH } from '@/features/sync/constant'
+import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
+import type {
+  AssemblyToDropboxSyncFilesPayload,
+  DropboxFileListFolderSingleEntry,
+  DropboxToAssemblySyncFilesPayload,
+  WhereClause,
+} from '@/features/sync/types'
 import { getFetcher } from '@/helper/fetcher.helper'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
@@ -11,13 +19,6 @@ import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import { bidirectionalMasterSync } from '@/trigger/processFileSync'
 import { appendDateTimeToFilePath, buildPathArray } from '@/utils/filePath'
-import type {
-  AssemblyToDropboxSyncFilesPayload,
-  DropboxFileListFolderSingleEntry,
-  DropboxToAssemblySyncFilesPayload,
-  WhereClause,
-} from '../types'
-import { MapFilesService } from './MapFiles.service'
 
 export class SyncService extends AuthenticatedDropboxService {
   readonly mapFilesService: MapFilesService
@@ -98,15 +99,13 @@ export class SyncService extends AuthenticatedDropboxService {
         // TODO: make sure the file binary is present in fileMetaData
 
         const downloadBody = await this.dbxApi.downloadFile(
-          '/2/files/download',
+          DBX_URL_PATH.fileDownload,
           entry?.path_display,
         )
         // upload file to assembly
         await copilotApi.uploadFile(
           fileCreateResponse.uploadUrl,
-          {
-            'Content-Length': fileMetaData.result.size.toString(), // need to set the content length to stream the file to s3 bucket
-          },
+          fileMetaData.result.size.toString(),
           downloadBody,
         )
         filePayload.contentHash = entry.content_hash
@@ -233,7 +232,7 @@ export class SyncService extends AuthenticatedDropboxService {
       // download file from Assembly
       const resp = await getFetcher(file.downloadUrl)
       // upload file to dropbox
-      const dbxResponse = await this.dbxApi.uploadFile('/2/files/upload', path, resp.body)
+      const dbxResponse = await this.dbxApi.uploadFile(DBX_URL_PATH.fileUpload, path, resp.body)
       return {
         dbxFileId: dbxResponse.id,
         contentHash: dbxResponse.contentHash,

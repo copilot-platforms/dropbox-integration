@@ -1,10 +1,10 @@
+import type { PageProps } from '@/app/(home)/types'
 import { Callout } from '@/features/auth/components/Callout'
 import { RealtimeDropboxConnections } from '@/features/auth/components/RealtimeDropboxConnections'
 import { AuthContextProvider } from '@/features/auth/context/AuthContext'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import { serializeClientUser } from '@/lib/copilot/models/ClientUser.model'
 import User from '@/lib/copilot/models/User.model'
-import type { PageProps } from './types'
 
 const Home = async ({ searchParams }: PageProps) => {
   const sp = await searchParams
