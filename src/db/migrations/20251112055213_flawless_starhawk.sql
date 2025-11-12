@@ -1,0 +1,1 @@
+ALTER TABLE "dropbox_connections" DROP COLUMN "dbx_cursor";
