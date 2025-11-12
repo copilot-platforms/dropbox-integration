@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
+import { SyncService } from '@/features/sync/lib/Sync.service'
 import User from '@/lib/copilot/models/User.model'
-import { SyncService } from '../lib/Sync.service'
 
 export const initiateSync = async (req: NextRequest) => {
   const token = req.nextUrl.searchParams.get('token')

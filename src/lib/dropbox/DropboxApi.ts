@@ -7,7 +7,7 @@ import {
   type DropboxAuthResponseType,
   type DropboxFileMetadata,
   DropboxFileMetadataSchema,
-} from './type'
+} from '@/lib/dropbox/type'
 
 export class DropboxApi {
   private readonly dropboxAuth: DropboxAuth
@@ -34,9 +34,10 @@ export class DropboxApi {
     headers?: Record<string, string>,
     body?: NodeJS.ReadableStream | null,
     otherOptions?: Record<string, string>,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
   ) {
     return await fetch(url, {
-      method: 'POST',
+      method,
       headers,
       body,
       ...otherOptions,
@@ -89,6 +90,10 @@ export class DropboxApi {
     return response.body
   }
 
+  /**
+   * Description: this function streams the file to Dropbox. @param body is the readable stream of the file.
+   * For the stream to work we need to add the duplex: 'half' option to the fetch call along with Content-Type: 'application/octet-stream' in the headers.
+   */
   async uploadFile(
     urlPath: string,
     filePath: string,

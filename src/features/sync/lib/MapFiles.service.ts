@@ -13,9 +13,9 @@ import {
   type FileSyncUpdatePayload,
   fileFolderSync,
 } from '@/db/schema/fileFolderSync.schema'
+import type { DropboxFileListFolderResultEntries, WhereClause } from '@/features/sync/types'
 import type { CopilotFileList } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
-import type { DropboxFileListFolderResultEntries, WhereClause } from '../types'
 
 export class MapFilesService extends AuthenticatedDropboxService {
   async getSingleFileMap(where: WhereClause): Promise<FileSyncSelectType | undefined> {
