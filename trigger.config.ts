@@ -2,7 +2,7 @@
 import { defineConfig } from '@trigger.dev/sdk/v3'
 
 export default defineConfig({
-  project: 'proj_eqvtkedzcivbzbvzqgxk',
+  project: 'proj_kpnsfyddsfreintgvvrw',
   // Automatically sync env variables from Vercel to Trigger
   // build: {
   //   extensions: [syncVercelEnvVars()],
