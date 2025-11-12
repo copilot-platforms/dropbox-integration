@@ -3,7 +3,7 @@ import 'server-only'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import type User from '@/lib/copilot/models/User.model'
 import BaseService from '@/lib/copilot/services/base.service'
-import { DropboxApi } from './DropboxApi'
+import { DropboxApi } from '@/lib/dropbox/DropboxApi'
 
 class AuthenticatedDropboxService extends BaseService {
   protected dbxApi: DropboxApi

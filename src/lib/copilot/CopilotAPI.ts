@@ -196,11 +196,15 @@ export class CopilotAPI {
     return CopilotFileCreateSchema.parse(createFileResponse)
   }
 
-  async _uploadFile(
-    url: string,
-    headers: Record<string, string>,
-    body: NodeJS.ReadableStream | null,
-  ) {
+  /**
+   * Description: this function streams the file to Assembly. @param body is the readable stream of the file.
+   * For the stream to work we need to add the duplex: 'half' option to the fetch call.
+   * Since assembly uploads the file to s3 bucket, we need to set the content length of the file.
+   */
+  async _uploadFile(url: string, contentLength: string, body: NodeJS.ReadableStream | null) {
+    const headers = {
+      'Content-Length': contentLength, // need to set the content length to stream the file to s3 bucket
+    }
     return await putFetcher(url, headers, { body, duplex: 'half' }) // duplex: half for readable stream
   }
 
