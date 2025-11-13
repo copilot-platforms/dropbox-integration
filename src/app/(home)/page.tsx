@@ -5,6 +5,7 @@ import { RealtimeDropboxConnections } from '@/features/auth/components/RealtimeD
 import { AuthContextProvider } from '@/features/auth/context/AuthContext'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import { DropboxService } from '@/features/dropbox/lib/Dropbox.service'
+import { RealtimeSync } from '@/features/sync/components/RealtimeSync'
 import { SubHeader } from '@/features/sync/components/SubHeader'
 import { MappingTable } from '@/features/sync/components/Table'
 import { UserChannelContextProvider } from '@/features/sync/context/UserChannelContext'
@@ -51,6 +52,7 @@ const Home = async ({ searchParams }: PageProps) => {
         mapList={mapList}
         tempMapList={tempMapList}
       >
+        <RealtimeSync user={user} />
         <CheckConnection>
           <SubHeader />
           <MappingTable />
