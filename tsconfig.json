@@ -22,7 +22,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@@home/*": ["./src/app/(home)/*"],
-      "@auth/*": ["./src/features/auth/*"]
+      "@auth/*": ["./src/features/auth/*"],
+      "@sync/*": ["./src/features/sync/*"]
     }
   },
   "include": [
