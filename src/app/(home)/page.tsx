@@ -52,7 +52,7 @@ const Home = async ({ searchParams }: PageProps) => {
         mapList={mapList}
         tempMapList={tempMapList}
       >
-        <RealtimeSync user={user} />
+        <RealtimeSync user={clientUser} />
         <CheckConnection>
           <SubHeader />
           <MappingTable />
