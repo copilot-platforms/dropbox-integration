@@ -43,7 +43,9 @@ export const handleWebhookEvents = async (req: NextRequest) => {
 
     const dropboxWebhook = new DropboxWebhook()
 
-    await Promise.all(accounts.map(dropboxWebhook.fetchDropBoxChanges))
+    await Promise.all(
+      accounts.map((account: string) => dropboxWebhook.fetchDropBoxChanges(account)),
+    )
 
     // Dropbox expects a 200 OK with plain text body
     return new NextResponse('', {

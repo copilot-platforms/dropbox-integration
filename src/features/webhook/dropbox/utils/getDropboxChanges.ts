@@ -20,7 +20,6 @@ export async function getDropboxChanges(
       await Promise.all(
         response.result.entries.map(async (entry) => {
           if (entry['.tag'] === 'deleted') {
-            console.info('ENTRY HERE', entry)
             const basePath = entry.path_display?.replace(rootPath, '')
 
             const mappedFile = await mapFilesService.getDbxMappedFileFromPath(
