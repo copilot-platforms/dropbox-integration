@@ -1,9 +1,11 @@
 'use client'
 
 import { Button, Icon } from 'copilot-design-system'
+import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
+import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useTable } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { cn } from '@/lib/utils'
@@ -17,7 +19,18 @@ const MappingTableRow = () => {
     filteredValue,
     onDropboxFolderChange,
   } = useTable()
-  const { folderTree, tempMapList, userChannelList } = useUserChannel()
+  const { tempMapList, userChannelList } = useUserChannel()
+  const { folderTree, isFolderTreeLoading } = useFolder()
+
+  if (isFolderTreeLoading) {
+    return (
+      <tr>
+        <td colSpan={5} className="py-4">
+          <Loader size={5} />
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <>
