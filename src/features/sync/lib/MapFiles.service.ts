@@ -133,7 +133,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     if (!channel) {
       const newChannel = await db
         .insert(channelSync)
-        .values({ ...payload, portalId: this.user.portalId })
+        .values({ ...payload, portalId: this.user.portalId, status: null })
         .returning()
       channel = newChannel[0]
     }
