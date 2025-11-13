@@ -1,0 +1,30 @@
+import { useCallback, useEffect, useState } from 'react'
+import { useAuthContext } from '@/features/auth/hooks/useAuth'
+import type { Folder } from '../types'
+
+export const useFolder = () => {
+  const { user } = useAuthContext()
+  const [folderTree, setFolderTree] = useState<Folder[]>([])
+  const [isFolderTreeLoading, setIsFolderTreeLoading] = useState(false)
+
+  const getPathOptions = useCallback(async () => {
+    setIsFolderTreeLoading(true)
+    // api call to get all the folders
+    const response = await fetch(`/api/dropbox/folder-tree?token=${user.token}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    const resp = await response.json()
+    setFolderTree(resp.folders)
+    setIsFolderTreeLoading(false)
+  }, [user.token])
+
+  useEffect(() => {
+    // biome-ignore lint/nursery/noFloatingPromises: floating promises are fine here
+    getPathOptions()
+  }, [getPathOptions])
+
+  return { folderTree, isFolderTreeLoading }
+}
