@@ -48,26 +48,26 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return connections[0]
   }
 
-  async getDbxMappedFile(dbxId: string, channelSyncId: string) {
-    const [mappedFile] = await this.getAllFileMaps(
+  async getDbxMappedFileIds(channelSyncId: string) {
+    const mappedFile = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
-        eq(fileFolderSync.dbxFileId, dbxId),
+        isNotNull(fileFolderSync.dbxFileId),
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
-    return mappedFile
+    return mappedFile.map((file) => file.dbxFileId)
   }
 
-  async getAssemblyMappedFile(fileId: string, channelSyncId: string) {
-    const [mappedFile] = await this.getAllFileMaps(
+  async getAssemblyMappedFileIds(channelSyncId: string) {
+    const mappedFile = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
-        eq(fileFolderSync.assemblyFileId, fileId),
+        isNotNull(fileFolderSync.assemblyFileId),
         isNotNull(fileFolderSync.dbxFileId),
       ) as WhereClause,
     )
-    return mappedFile
+    return mappedFile.map((file) => file.assemblyFileId)
   }
 
   async getOrCreateChannelMap(
@@ -118,33 +118,30 @@ export class MapFilesService extends AuthenticatedDropboxService {
       assemblyChannelId,
       dbxRootPath,
     })
+    const fileIds = await this.getDbxMappedFileIds(channelMap.id)
 
-    const mappedEntries = await Promise.all(
-      parsedDbxEntries.map(async (entry) => {
-        const fileObjectType = entry['.tag']
-        if (
-          (fileObjectType === ObjectType.FOLDER && entry.path_display !== dbxRootPath) ||
-          fileObjectType === ObjectType.FILE
-        ) {
-          const isMapped = await this.getDbxMappedFile(entry.id, channelMap.id)
-          if (!isMapped)
-            return {
-              payload: {
-                opts: {
-                  dbxRootPath,
-                  assemblyChannelId,
-                  channelSyncId: channelMap.id,
-                  user: this.user,
-                  connectionToken: this.connectionToken,
-                },
-                entry,
+    const mappedEntries = parsedDbxEntries.map((entry) => {
+      const fileObjectType = entry['.tag']
+      if (
+        (fileObjectType === ObjectType.FOLDER && entry.path_display !== dbxRootPath) ||
+        fileObjectType === ObjectType.FILE
+      ) {
+        if (!fileIds.includes(entry.id))
+          return {
+            payload: {
+              opts: {
+                dbxRootPath,
+                assemblyChannelId,
+                channelSyncId: channelMap.id,
+                user: this.user,
+                connectionToken: this.connectionToken,
               },
-            }
-
-          return null
-        }
-      }),
-    )
+              entry,
+            },
+          }
+      }
+      return null
+    })
     return mappedEntries.filter((entry) => !!entry)
   }
 
@@ -158,31 +155,27 @@ export class MapFilesService extends AuthenticatedDropboxService {
       assemblyChannelId,
       dbxRootPath,
     })
+    const fileIds = await this.getAssemblyMappedFileIds(channelMap.id)
 
-    const mappedEntries = await Promise.all(
-      files.map(async (file) => {
-        const fileType = file.object
-        if (fileType === ObjectType.FILE || fileType === ObjectType.FOLDER) {
-          const isMapped = await this.getAssemblyMappedFile(file.id, channelMap.id)
-
-          if (!isMapped)
-            return {
-              payload: {
-                opts: {
-                  dbxRootPath,
-                  assemblyChannelId,
-                  channelSyncId: channelMap.id,
-                  user: this.user,
-                  connectionToken: this.connectionToken,
-                },
-                file: { ...file, object: fileType },
+    const mappedEntries = files.map((file) => {
+      const fileType = file.object
+      if (fileType === ObjectType.FILE || fileType === ObjectType.FOLDER) {
+        if (!fileIds.includes(file.id))
+          return {
+            payload: {
+              opts: {
+                dbxRootPath,
+                assemblyChannelId,
+                channelSyncId: channelMap.id,
+                user: this.user,
+                connectionToken: this.connectionToken,
               },
-            }
-
-          return null
-        }
-      }),
-    )
+              file: { ...file, object: fileType },
+            },
+          }
+      }
+      return null
+    })
     return mappedEntries.filter((entry) => !!entry)
   }
 }
