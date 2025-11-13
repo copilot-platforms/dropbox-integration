@@ -46,6 +46,10 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return mappedFile
   }
 
+  async deleteFileMap(id: string): Promise<void> {
+    await db.delete(fileFolderSync).where(eq(fileFolderSync.id, id))
+  }
+
   async updateFileMap(
     payload: FileSyncUpdatePayload,
     condition: WhereClause,
@@ -63,6 +67,17 @@ export class MapFilesService extends AuthenticatedDropboxService {
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
         eq(fileFolderSync.dbxFileId, dbxId),
+        isNotNull(fileFolderSync.assemblyFileId),
+      ) as WhereClause,
+    )
+    return mappedFile
+  }
+
+  async getDbxMappedFileFromPath(dbxPath: string, channelSyncId: string) {
+    const [mappedFile] = await this.getAllFileMaps(
+      and(
+        eq(fileFolderSync.channelSyncId, channelSyncId),
+        eq(fileFolderSync.itemPath, dbxPath),
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )

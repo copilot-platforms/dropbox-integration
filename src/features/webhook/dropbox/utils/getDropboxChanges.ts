@@ -1,0 +1,58 @@
+import type { MapFilesService } from '@/features/sync/lib/MapFiles.service'
+import { DropboxFileListFolderResultEntriesSchema } from '@/features/sync/types'
+import type { DropboxApi } from '@/lib/dropbox/DropboxApi'
+
+export async function getDropboxChanges(
+  refreshToken: string,
+  cursor: string,
+  rootPath: string,
+  dbxApi: DropboxApi,
+  mapFilesService: MapFilesService,
+  channelSyncId: string,
+) {
+  dbxApi.refreshAccessToken(refreshToken)
+  const dbx = dbxApi.getDropboxClient(refreshToken)
+
+  try {
+    const response = await dbx.filesListFolderContinue({ cursor })
+
+    const entriesWithId = (
+      await Promise.all(
+        response.result.entries.map(async (entry) => {
+          if (entry['.tag'] === 'deleted') {
+            console.info('ENTRY HERE', entry)
+            const basePath = entry.path_display?.replace(rootPath, '')
+
+            const mappedFile = await mapFilesService.getDbxMappedFileFromPath(
+              basePath ?? '',
+              channelSyncId,
+            )
+            if (!mappedFile) return null
+            return { ...entry, id: mappedFile.dbxFileId }
+          }
+          return entry
+        }),
+      )
+    ).filter(Boolean)
+
+    const parsed = DropboxFileListFolderResultEntriesSchema.safeParse(entriesWithId)
+
+    if (!parsed.success) {
+      console.error('Invalid Dropbox response entries:', parsed.error)
+      throw new Error('Invalid Dropbox entries format')
+    }
+
+    const filtered = parsed.data.filter((entry) =>
+      entry.path_display.toLowerCase().startsWith(rootPath.toLowerCase()),
+    )
+
+    return {
+      entries: filtered,
+      newCursor: response.result.cursor,
+      hasMore: response.result.has_more,
+    }
+  } catch (error) {
+    console.error('Error fetching Dropbox changes:', error)
+    throw error
+  }
+}
