@@ -24,7 +24,7 @@ export class UserService extends BaseService {
 
   async getSelectorClientsCompanies(): Promise<SelectorClientsCompanies> {
     const users = await this.getClientsCompanies(MAX_FETCH_COPILOT_RESOURCES)
-    const fileChannels = await this.copilot.listFileChannels()
+    const fileChannels = await this.copilot.listFileChannels({ limit: MAX_FETCH_COPILOT_RESOURCES })
 
     return {
       clients: users.clients
