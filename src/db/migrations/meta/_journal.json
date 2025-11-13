@@ -12,8 +12,8 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1761810733626,
-      "tag": "20251030075213_create_sync_tables",
+      "when": 1762853127467,
+      "tag": "20251111092527_create_sync_table",
       "breakpoints": false
     }
   ]
