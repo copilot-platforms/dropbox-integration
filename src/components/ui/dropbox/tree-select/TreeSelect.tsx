@@ -3,9 +3,9 @@
 import { Icon } from 'copilot-design-system'
 import type React from 'react'
 import type { Dispatch, SetStateAction } from 'react'
+import TreeNode from '@/components/ui/dropbox/tree-select/TreeNode'
+import { useTreeSelect } from '@/components/ui/dropbox/useDropbox'
 import { cn } from '@/lib/utils'
-import { useTreeSelect } from '../useDropbox'
-import TreeNode from './TreeNode'
 
 // TODO: update css
 
