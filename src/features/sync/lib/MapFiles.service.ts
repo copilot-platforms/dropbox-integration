@@ -245,6 +245,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     }
 
     return {
+      id: channelMap.id,
       fileChannelValue,
       dbxRootPath: channelMap.dbxRootPath,
       status: channelMap.status,
