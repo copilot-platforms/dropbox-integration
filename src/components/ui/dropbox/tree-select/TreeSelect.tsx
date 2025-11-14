@@ -1,7 +1,6 @@
 'use client'
 
 import { Icon } from 'copilot-design-system'
-import type React from 'react'
 import TreeNode from '@/components/ui/dropbox/tree-select/TreeNode'
 import { useTreeSelect } from '@/components/ui/dropbox/useDropbox'
 import { cn } from '@/lib/utils'
@@ -11,7 +10,6 @@ import { cn } from '@/lib/utils'
 export interface TreeSelectNode {
   path: string
   label: string
-  icon?: React.ReactNode
   children?: TreeSelectNode[]
   disabled?: boolean
 }
@@ -48,7 +46,7 @@ export default function TreeSelect({
   } = useTreeSelect({ options, value, onChange })
 
   return (
-    <div ref={containerRef} className={cn('relative w-96', className)}>
+    <div ref={containerRef} className={cn('relative w-80', className)}>
       {isOpen ? (
         <input
           ref={inputRef}
@@ -77,7 +75,7 @@ export default function TreeSelect({
           )}
         >
           {selectedLabel && <Icon icon="Files" width={16} height={16} className="me-2" />}
-          <span className={cn('flex-1', !selectedLabel && 'text-gray-500')}>
+          <span className={cn('flex-1 truncate', !selectedLabel && 'text-gray-500')}>
             {selectedLabel || placeholder}
           </span>
           <div className="flex items-center gap-2">
@@ -88,7 +86,7 @@ export default function TreeSelect({
                   e.stopPropagation()
                   onChange(null)
                 }}
-                className="transition-opacity hover:opacity-70"
+                className="cursor-pointer transition-opacity hover:opacity-70"
               >
                 <Icon icon="Close" width={16} height={16} />
               </button>
