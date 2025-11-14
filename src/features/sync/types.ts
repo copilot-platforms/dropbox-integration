@@ -116,8 +116,15 @@ export const DropdownFileChannelSchema = z.object({
 export type DropdownFileChannel = z.infer<typeof DropdownFileChannelSchema>
 
 export type MapList = {
+  id?: string
   fileChannelValue: UserCompanySelectorInputValue[]
   dbxRootPath: string
   status: boolean | null
   fileChannelId: string
 }
+
+export const UpdateConnectionStatusSchema = z.object({
+  status: z.boolean(),
+  assemblyChannelId: z.string().min(1),
+  dbxRootPath: z.string().min(1),
+})

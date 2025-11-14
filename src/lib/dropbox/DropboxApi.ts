@@ -92,7 +92,7 @@ export class DropboxApi {
 
   /**
    * Description: this function streams the file to Dropbox. @param body is the readable stream of the file.
-   * For the stream to work we need to add the duplex: 'half' option to the fetch call along with Content-Type: 'application/octet-stream' in the headers.
+   * For the stream to work we need to add the Content-Type: 'application/octet-stream' in the headers.
    */
   async uploadFile(
     urlPath: string,
@@ -108,9 +108,7 @@ export class DropboxApi {
       }),
       'Content-Type': 'application/octet-stream',
     }
-    const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body, {
-      duplex: 'half',
-    })
+    const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body)
     return DropboxFileMetadataSchema.parse(camelKeys(await response.json()))
   }
 }
