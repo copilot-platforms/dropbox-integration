@@ -210,6 +210,10 @@ export class CopilotAPI {
     return await putFetcher(url, headers, { body, duplex: 'half' }) // duplex: half for readable stream
   }
 
+  async _deleteFile(id: string) {
+    return await this.copilot.deleteFile({ id })
+  }
+
   async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {
     const list = await this.copilot.listFiles({ channelId, nextToken, limit: MAX_FILES_LIMIT })
     return CopilotFileListSchema.parse(list)
@@ -250,6 +254,7 @@ export class CopilotAPI {
   getPricesById = this.wrapWithRetry(this._getPrices)
   createFile = this.wrapWithRetry(this._createFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
+  deleteFile = this.wrapWithRetry(this._deleteFile)
   listFiles = this.wrapWithRetry(this._listFiles)
   retrieveFileChannel = this.wrapWithRetry(this._retrieveFileChannel)
   listFileChannels = this.wrapWithRetry(this._listFileChannels)
