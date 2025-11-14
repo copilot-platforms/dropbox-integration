@@ -25,6 +25,7 @@ export const useRealtimeSync = (user: ClientUser) => {
             return {
               ...mapItem,
               status: newPayload.status,
+              id: newPayload.id,
             }
           }
           return mapItem
