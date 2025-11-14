@@ -22,14 +22,14 @@ type SyncTaskPayload = {
 export const bidirectionalMasterSync = task({
   id: 'bidirectional-master-sync',
   run: async (payload: SyncTaskPayload) => {
-    await processAssemblyToDropboxSync.triggerAndWait(payload)
+    await initiateAssemblyToDropboxSync.triggerAndWait(payload)
     console.info('\n\n Synced Assembly files to Dropbox \n\n')
-    await processDropboxToAssemblySync.trigger(payload)
+    await initiateDropboxToAssemblySync.triggerAndWait(payload)
   },
 })
 
-export const processDropboxToAssemblySync = task({
-  id: 'process-dropbox-sync-to-assembly',
+export const initiateDropboxToAssemblySync = task({
+  id: 'initiate-dropbox-to-assembly-sync',
   run: async (payload: SyncTaskPayload) => {
     const { dbxRootPath, assemblyChannelId, connectionToken, user } = payload
     const mapFilesService = new MapFilesService(user, connectionToken)
@@ -44,6 +44,9 @@ export const processDropboxToAssemblySync = task({
       recursive: true,
       limit: MAX_FILES_LIMIT,
     })
+
+    // biome-ignore lint/suspicious/noExplicitAny: just for awaiting purpose so its safe to ignore
+    const batchPromises: Promise<any>[] = []
 
     // 2. loop over the dropbox files
     while (dbxFiles.result.entries.length) {
@@ -64,13 +67,20 @@ export const processDropboxToAssemblySync = task({
         assemblyChannelId,
       )
 
-      if (filteredEntries.length) await syncDropboxFileToAssembly.batchTrigger(filteredEntries)
+      if (filteredEntries.length) {
+        const batchPromise = syncDropboxFileToAssembly.batchTrigger(filteredEntries)
+        batchPromises.push(batchPromise)
+      }
 
       if (!dbxFiles.result.has_more) {
         // update channelSync with lastest cursor
-        await mapFilesService.updateChannelMap({
-          dbxCursor: dbxFiles.result.cursor,
-        })
+        await mapFilesService.updateChannelMap(
+          {
+            dbxCursor: dbxFiles.result.cursor,
+          },
+          assemblyChannelId,
+          dbxRootPath,
+        )
         break
       }
 
@@ -79,6 +89,19 @@ export const processDropboxToAssemblySync = task({
         cursor: dbxFiles.result.cursor,
       })
     }
+
+    /**
+     * 3. await all the batch promises.
+     * This is required to ensure that all the files are synced before indicating the sync is complete
+     * */
+    await Promise.all(batchPromises)
+    await mapFilesService.updateChannelMap(
+      {
+        status: true,
+      },
+      assemblyChannelId,
+      dbxRootPath,
+    )
   },
 })
 
@@ -98,8 +121,8 @@ export const syncDropboxFileToAssembly = task({
   },
 })
 
-export const processAssemblyToDropboxSync = task({
-  id: 'process-assembly-sync-to-dropbox',
+export const initiateAssemblyToDropboxSync = task({
+  id: 'initiate-assembly-to-dropbox-sync',
   run: async (payload: SyncTaskPayload) => {
     const { user, connectionToken, dbxRootPath, assemblyChannelId } = payload
     const mapFilesService = new MapFilesService(user, connectionToken)
@@ -125,7 +148,6 @@ export const processAssemblyToDropboxSync = task({
       )
 
       if (filteredEntries.length) {
-        // TODO: task to sync the files to dropbox
         const batchPromise = syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
         batchPromises.push(batchPromise)
       }
@@ -138,7 +160,7 @@ export const processAssemblyToDropboxSync = task({
     }
     /**
      * 3. await all the batch promises.
-     * This is required to ensure that all the files are synced to assembly first before syncing assembly to dropbox
+     * This is required to ensure that all the files are synced to Dropbox first before syncing dropbox to assembly
      * */
     await Promise.all(batchPromises)
   },

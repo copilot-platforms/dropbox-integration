@@ -1,4 +1,5 @@
 import { and, eq, isNotNull } from 'drizzle-orm'
+import z from 'zod'
 import db from '@/db'
 import { ObjectType } from '@/db/constants'
 import {
@@ -13,8 +14,17 @@ import {
   type FileSyncUpdatePayload,
   fileFolderSync,
 } from '@/db/schema/fileFolderSync.schema'
-import type { DropboxFileListFolderResultEntries, WhereClause } from '@/features/sync/types'
-import type { CopilotFileList } from '@/lib/copilot/types'
+import type {
+  DropboxFileListFolderResultEntries,
+  MapList,
+  WhereClause,
+} from '@/features/sync/types'
+import { copilotBottleneck } from '@/lib/copilot/bottleneck'
+import {
+  type CopilotFileList,
+  FileChannelMembership,
+  type UserCompanySelectorInputValue,
+} from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 
 export class MapFilesService extends AuthenticatedDropboxService {
@@ -86,7 +96,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     if (!channel) {
       const newChannel = await db
         .insert(channelSync)
-        .values({ ...payload, portalId: this.user.portalId, status: true })
+        .values({ ...payload, portalId: this.user.portalId })
         .returning()
       channel = newChannel[0]
     }
@@ -94,7 +104,11 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return channel
   }
 
-  async updateChannelMap(payload: ChannelSyncUpdatePayload): Promise<ChannelSyncSelectType> {
+  async updateChannelMap(
+    payload: ChannelSyncUpdatePayload,
+    assemblyChannelId: string,
+    dbxRootPath: string,
+  ): Promise<ChannelSyncSelectType> {
     const connections = await db
       .update(channelSync)
       .set(payload)
@@ -102,10 +116,18 @@ export class MapFilesService extends AuthenticatedDropboxService {
         and(
           eq(channelSync.portalId, this.user.portalId),
           eq(channelSync.dbxAccountId, this.connectionToken.accountId),
+          eq(channelSync.assemblyChannelId, assemblyChannelId),
+          eq(channelSync.dbxRootPath, dbxRootPath),
         ),
       )
       .returning()
     return connections[0]
+  }
+
+  async getAllChannelMaps(where?: WhereClause): Promise<ChannelSyncSelectType[]> {
+    return await db.query.channelSync.findMany({
+      where: (channelSync, { eq }) => and(where, eq(channelSync.portalId, this.user.portalId)),
+    })
   }
 
   async checkAndFilterDbxFiles(
@@ -158,6 +180,8 @@ export class MapFilesService extends AuthenticatedDropboxService {
     const fileIds = await this.getAssemblyMappedFileIds(channelMap.id)
 
     const mappedEntries = files.map((file) => {
+      if (file.status === 'pending') return null // pending records mean files are not uploaded yet to Assembly
+
       const fileType = file.object
       if (fileType === ObjectType.FILE || fileType === ObjectType.FOLDER) {
         if (!fileIds.includes(file.id))
@@ -177,5 +201,54 @@ export class MapFilesService extends AuthenticatedDropboxService {
       return null
     })
     return mappedEntries.filter((entry) => !!entry)
+  }
+
+  async listFormattedChannelMap(): Promise<MapList[]> {
+    const channelMaps = await this.getAllChannelMaps()
+
+    const channelMapPromises = []
+    for (const channelMap of channelMaps) {
+      channelMapPromises.push(
+        copilotBottleneck.schedule(() => {
+          return this.formatChannelMap(channelMap)
+        }),
+      )
+    }
+
+    return await Promise.all(channelMapPromises)
+  }
+
+  async formatChannelMap(channelMap: ChannelSyncSelectType): Promise<MapList> {
+    const fileChannel = await this.copilot.retrieveFileChannel(channelMap.assemblyChannelId)
+    let fileChannelValue: UserCompanySelectorInputValue[]
+
+    if (fileChannel.membershipType === FileChannelMembership.COMPANY) {
+      if (!fileChannel.companyId) throw new Error('Company id not found')
+      const companyDetails = await this.copilot.getCompany(fileChannel.companyId)
+      fileChannelValue = [
+        {
+          id: companyDetails.id,
+          companyId: companyDetails.id,
+          object: 'company' as const,
+        },
+      ]
+    } else {
+      if (!fileChannel.clientId) throw new Error('Client id not found')
+      const clientDetails = await this.copilot.getClient(fileChannel.clientId)
+      fileChannelValue = [
+        {
+          id: clientDetails.id,
+          companyId: z.string().parse(fileChannel.companyId),
+          object: 'client' as const,
+        },
+      ]
+    }
+
+    return {
+      fileChannelValue,
+      dbxRootPath: channelMap.dbxRootPath,
+      status: channelMap.status,
+      fileChannelId: fileChannel.id,
+    }
   }
 }
