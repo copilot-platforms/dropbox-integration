@@ -62,18 +62,31 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     setFilterValue('')
   }
 
+  const flattenTree = (nodes: TreeSelectNode[]): TreeSelectNode[] => {
+    const flattenedNodes: TreeSelectNode[] = []
+    for (const node of nodes) {
+      const cloneNode = structuredClone(node)
+      delete cloneNode.children
+      flattenedNodes.push(cloneNode)
+      if (node.children?.length) {
+        flattenedNodes.push(...flattenTree(node.children))
+      }
+    }
+
+    return flattenedNodes
+  }
+
   const filterNodes = (nodes: TreeSelectNode[], query: string): TreeSelectNode[] => {
     if (!query) return nodes
+    const flatTree = flattenTree(nodes)
 
-    return nodes
+    return flatTree
       .filter((node) => {
-        const matches = node.label.toLowerCase().includes(query.toLowerCase())
-        const hasMatchingChildren = node.children && filterNodes(node.children, query).length > 0
-        return matches || hasMatchingChildren
+        return node.label.toLowerCase().includes(query.toLowerCase())
       })
       .map((node) => ({
         ...node,
-        children: node.children ? filterNodes(node.children, query) : undefined,
+        label: node.path,
       }))
   }
 

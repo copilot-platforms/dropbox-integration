@@ -37,14 +37,14 @@ const MappingTableRow = () => {
     <>
       {tempMapList.map((mapItem, index) => (
         <tr key={`${generateRandomString(8)}-${index}`}>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-80 whitespace-nowrap px-6 py-2">
             <CopilotSelector
               name="File channel"
               initialValue={getCompanySelectorValue(userChannelList, mapItem.fileChannelValue[0])}
               onChange={(val) => onUserSelectorValueChange(val, index)}
             />
           </td>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-96 whitespace-nowrap px-6 py-2">
             <TreeSelect
               value={filteredValue?.[index] || mapItem.dbxRootPath}
               onChange={(val) => onDropboxFolderChange(val, index)}
@@ -52,8 +52,8 @@ const MappingTableRow = () => {
               placeholder="Search Dropbox folder"
             />
           </td>
-          <td className="whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
+          <td className="w-[125px] whitespace-nowrap px-6 py-2">
             <div className="flex items-center gap-2">
               {mapItem.status ? (
                 <span className="text-green-700 text-sm">Active</span>
@@ -62,7 +62,7 @@ const MappingTableRow = () => {
               )}
             </div>
           </td>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-[150px] whitespace-nowrap px-6 py-2">
             {mapItem.id ? (
               <Tooltip
                 content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
@@ -79,7 +79,7 @@ const MappingTableRow = () => {
                 />
               </Tooltip>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
                   <Tooltip
                     content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
@@ -115,7 +115,7 @@ const MappingTableRow = () => {
 
 export const MappingTable = () => {
   const columns = [
-    { title: 'File Channel', key: 'fileChannel', className: 'w-72' },
+    { title: 'File Channel', key: 'fileChannel', className: 'w-80' },
     { title: 'Dropbox Folder', key: 'dropboxFolder', className: 'w-96' },
     { title: 'Last Updated', key: 'lastUpdated', className: 'w-[200px]' },
     { title: 'Status', key: 'status', className: 'w-[125px]' },

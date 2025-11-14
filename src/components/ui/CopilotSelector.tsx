@@ -14,7 +14,7 @@ export const CopilotSelector = ({ name, initialValue, onChange }: CopilotSelecto
 
   if (typeof window !== 'undefined')
     return (
-      <div className="w-72">
+      <div className="w-64">
         <UserCompanySelector
           name={name}
           initialValue={initialValue}
