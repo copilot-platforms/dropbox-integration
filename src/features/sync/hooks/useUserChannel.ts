@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { UserChannelContext } from '../context/UserChannelContext'
+import { UserChannelContext } from '@/features/sync/context/UserChannelContext'
 
 export const useUserChannel = () => {
   const context = useContext(UserChannelContext)

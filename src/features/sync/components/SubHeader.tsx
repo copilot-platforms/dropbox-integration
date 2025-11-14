@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from 'copilot-design-system'
-import { useSubHeader } from '../hooks/useSubHeader'
+import { useSubHeader } from '@/features/sync/hooks/useSubHeader'
 
 export const SubHeader = () => {
   const { handleAddRule } = useSubHeader()

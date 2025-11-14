@@ -1,13 +1,13 @@
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
-import { copilotBottleneck } from '@/lib/copilot/bottleneck'
-import BaseService from '@/lib/copilot/services/base.service'
-import { type CopilotFileChannelRetrieve, FileChannelMembership } from '@/lib/copilot/types'
 import {
   ClientsResponseSchema,
   CompaniesResponseSchema,
   type SelectorClientsCompanies,
   type UserClientsCompanies,
-} from '../types'
+} from '@/features/sync/types'
+import { copilotBottleneck } from '@/lib/copilot/bottleneck'
+import BaseService from '@/lib/copilot/services/base.service'
+import { type CopilotFileChannelRetrieve, FileChannelMembership } from '@/lib/copilot/types'
 
 export class UserService extends BaseService {
   async getClientsCompanies(limit?: number): Promise<UserClientsCompanies> {
