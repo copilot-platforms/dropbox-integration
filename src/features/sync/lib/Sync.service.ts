@@ -28,10 +28,7 @@ export class SyncService extends AuthenticatedDropboxService {
     this.mapFilesService = new MapFilesService(user, connectionToken)
   }
 
-  async initiateSync(assemblyChannelId: string) {
-    // expect assembly channel and dropbox folder path Inputs.
-    const dbxRootPath = '/Assembly'
-
+  async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
     // bidrectional sync
     await bidirectionalMasterSync.trigger({
       dbxRootPath,

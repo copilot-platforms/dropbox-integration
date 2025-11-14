@@ -2,7 +2,6 @@
 
 import { Icon } from 'copilot-design-system'
 import type React from 'react'
-import type { Dispatch, SetStateAction } from 'react'
 import TreeNode from '@/components/ui/dropbox/tree-select/TreeNode'
 import { useTreeSelect } from '@/components/ui/dropbox/useDropbox'
 import { cn } from '@/lib/utils'
@@ -19,7 +18,7 @@ export interface TreeSelectNode {
 
 interface TreeSelectProps {
   value: string | null
-  onChange: Dispatch<SetStateAction<string | null>>
+  onChange: (val: string | null) => void
   options: TreeSelectNode[]
   placeholder?: string
   disabled?: boolean

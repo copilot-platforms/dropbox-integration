@@ -1,4 +1,4 @@
 import { initiateSync } from '@/features/sync/api/sync.controller'
 import { withErrorHandler } from '@/utils/withErrorHandler'
 
-export const GET = withErrorHandler(initiateSync)
+export const POST = withErrorHandler(initiateSync)

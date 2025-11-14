@@ -40,6 +40,7 @@ export const ClientResponseSchema = z.object({
   givenName: z.string(),
   familyName: z.string(),
   email: z.string(),
+  companyId: z.string(),
   companyIds: z.array(z.uuid()).optional(),
   status: z.string(),
   avatarImageUrl: z.string().nullable(),
@@ -198,3 +199,39 @@ export const CopilotFileListSchema = z.object({
   nextToken: z.string().optional(),
 })
 export type CopilotFileList = z.infer<typeof CopilotFileListSchema>
+
+export const UserCompanySelectorObject = {
+  COMPANY: 'company',
+  CLIENT: 'client',
+  INTERNAL_USER: 'internalUser',
+} as const
+
+const UserCompanySelectorObjectSchema = z.enum(Object.values(UserCompanySelectorObject))
+export type UserCompanySelectorObjectType = z.infer<typeof UserCompanySelectorObjectSchema>
+
+export type UserCompanySelectorInputValue = {
+  id: string
+  companyId: string
+  object: UserCompanySelectorObjectType
+}
+
+export enum FileChannelMembership {
+  GROUP = 'group',
+  INDIVIDUAL = 'individual',
+  COMPANY = 'company',
+}
+
+const FileChannelMembershipTypeSchema = z.enum(Object.values(FileChannelMembership))
+export type FileChannelMembershipType = z.infer<typeof FileChannelMembershipTypeSchema>
+
+export const CopilotFileChannelRetrieveSchema = z.object({
+  id: z.string(),
+  membershipType: FileChannelMembershipTypeSchema,
+  clientId: z.string().optional(),
+  companyId: z.string().optional(),
+  memberIds: z.array(z.string()).nullable(),
+})
+export type CopilotFileChannelRetrieve = z.infer<typeof CopilotFileChannelRetrieveSchema>
+
+export const CopilotFileChannelListSchema = z.array(CopilotFileChannelRetrieveSchema)
+export type CopilotFileChannelList = z.infer<typeof CopilotFileChannelListSchema>
