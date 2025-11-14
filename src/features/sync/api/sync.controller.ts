@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
+import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import { SyncService } from '@/features/sync/lib/Sync.service'
-import { FileSyncCreateRequestSchema } from '@/features/sync/types'
+import { FileSyncCreateRequestSchema, UpdateConnectionStatusSchema } from '@/features/sync/types'
 import User from '@/lib/copilot/models/User.model'
 
 export const initiateSync = async (req: NextRequest) => {
@@ -23,5 +24,33 @@ export const initiateSync = async (req: NextRequest) => {
   })
   await syncService.initiateSync(parsedBody.fileChannelId, parsedBody.dbxRootPath)
 
-  return NextResponse.json({ message: 'Sync initiated successfully' }, { status: 200 })
+  return NextResponse.json({ message: 'Sync initiated successfully' })
+}
+
+export const updateSyncStatus = async (req: NextRequest) => {
+  const token = req.nextUrl.searchParams.get('token')
+  const user = await User.authenticate(token)
+
+  const body = await req.json()
+  const { status, assemblyChannelId, dbxRootPath } = UpdateConnectionStatusSchema.parse(body)
+
+  const dbxService = new DropboxConnectionsService(user)
+  const connection = await dbxService.getConnectionForWorkspace()
+
+  if (!connection.refreshToken) throw new Error('No refresh token found')
+  if (!connection.accountId) throw new Error('No accountId found')
+
+  const mapService = new MapFilesService(user, {
+    refreshToken: connection.refreshToken,
+    accountId: connection.accountId,
+  })
+  await mapService.updateChannelMap(
+    {
+      status,
+    },
+    assemblyChannelId,
+    dbxRootPath,
+  )
+
+  return NextResponse.json({ message: 'Sync status updated successfully' })
 }

@@ -1,20 +1,14 @@
-import fetch from 'node-fetch'
-
-export const putFetcher = async (
+export const postFetcher = async (
   url: string,
   headers: Record<string, string>,
-  options: Record<string, string | NodeJS.ReadableStream | null>,
+  options: Record<string, string>,
 ) => {
   return await fetch(url, {
-    method: 'PUT',
+    method: 'POST',
     headers: {
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'application/json',
       ...headers,
     },
     ...options,
   })
-}
-
-export const getFetcher = async (url: string) => {
-  return await fetch(url)
 }
