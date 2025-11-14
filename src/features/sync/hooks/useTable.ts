@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
+import type { MapList } from '@/features/sync/types'
+import { postFetcher } from '@/helper/fetcher.helper'
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
 
 export const useTable = () => {
@@ -10,6 +12,21 @@ export const useTable = () => {
     [key: number]: string
   }>()
   const [filteredValue, setFilteredValue] = useState<{ [key: number]: string | null }>()
+
+  const updateTempMapListState = (index: number, option: Partial<MapList>) => {
+    setUserChannel((prev) => ({
+      ...prev,
+      tempMapList: prev.tempMapList.map((mapItem, i) => {
+        if (i === index) {
+          return {
+            ...mapItem,
+            ...option,
+          }
+        }
+        return mapItem
+      }),
+    }))
+  }
 
   const onUserSelectorValueChange = (val: UserCompanySelectorInputValue[], index: number) => {
     let fileChannelId: string | undefined
@@ -29,35 +46,12 @@ export const useTable = () => {
     if (!fileChannelId) return
 
     setFileChannelIds((prev) => ({ ...prev, [index]: fileChannelId }))
-    setUserChannel((prev) => ({
-      ...prev,
-      tempMapList: prev.tempMapList.map((mapItem, i) => {
-        if (i === index) {
-          return {
-            ...mapItem,
-            fileChannelValue: val,
-            fileChannelId,
-          }
-        }
-        return mapItem
-      }),
-    }))
+    updateTempMapListState(index, { fileChannelValue: val, fileChannelId })
   }
 
   const onDropboxFolderChange = (val: string | null, index: number) => {
     setFilteredValue((prev) => ({ ...prev, [index]: val }))
-    setUserChannel((prev) => ({
-      ...prev,
-      tempMapList: prev.tempMapList.map((mapItem, i) => {
-        if (i === index) {
-          return {
-            ...mapItem,
-            dbxRootPath: val || '',
-          }
-        }
-        return mapItem
-      }),
-    }))
+    updateTempMapListState(index, { dbxRootPath: val || '' })
   }
 
   const handleItemRemove = (index: number) => {
@@ -72,28 +66,43 @@ export const useTable = () => {
       fileChannelId: fileChannelIds?.[index] || tempMapList[index].fileChannelId,
       dbxRootPath: filteredValue?.[index] || tempMapList[index].dbxRootPath,
     }
+    updateTempMapListState(index, { status: null })
 
-    setUserChannel((prev) => ({
-      ...prev,
-      tempMapList: prev.tempMapList.map((mapItem, i) => {
-        if (i === index) {
-          return {
-            ...mapItem,
-            status: null,
-          }
-        }
-        return mapItem
-      }),
-    }))
+    try {
+      await postFetcher(
+        `/api/sync?token=${user.token}`,
+        {},
+        {
+          body: JSON.stringify(payload),
+        },
+      )
+    } catch (error: unknown) {
+      console.error(error)
+      updateTempMapListState(index, { status: false })
+    }
+  }
 
-    const resp = await fetch(`/api/sync?token=${user.token}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-    await resp.json()
+  const handleSyncStatusChange = async (index: number) => {
+    const payload = {
+      status: !tempMapList[index].status,
+      assemblyChannelId: tempMapList[index].fileChannelId,
+      dbxRootPath: filteredValue?.[index] || tempMapList[index].dbxRootPath,
+    }
+
+    updateTempMapListState(index, { status: !tempMapList[index].status })
+
+    try {
+      await postFetcher(
+        `/api/sync/update-status?token=${user.token}`,
+        {},
+        {
+          body: JSON.stringify(payload),
+        },
+      )
+    } catch (error: unknown) {
+      console.error(error)
+      updateTempMapListState(index, { status: !tempMapList[index].status })
+    }
   }
 
   return {
@@ -102,5 +111,6 @@ export const useTable = () => {
     onDropboxFolderChange,
     handleSync,
     handleItemRemove,
+    handleSyncStatusChange,
   }
 }

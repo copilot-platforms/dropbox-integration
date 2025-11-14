@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Icon } from 'copilot-design-system'
+import { IconButton, Tooltip } from 'copilot-design-system'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
@@ -13,6 +13,7 @@ import { generateRandomString } from '@/utils/random'
 
 const MappingTableRow = () => {
   const {
+    handleSyncStatusChange,
     handleItemRemove,
     handleSync,
     onUserSelectorValueChange,
@@ -48,7 +49,7 @@ const MappingTableRow = () => {
               value={filteredValue?.[index] || mapItem.dbxRootPath}
               onChange={(val) => onDropboxFolderChange(val, index)}
               options={folderTree}
-              placeholder="Select Dropbox folder"
+              placeholder="Search Dropbox folder"
             />
           </td>
           <td className="whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
@@ -62,22 +63,48 @@ const MappingTableRow = () => {
             </div>
           </td>
           <td className="whitespace-nowrap px-6 py-2">
-            {mapItem.status ? (
-              <span className="cursor-pointer text-red-700" title="Disconnet sync">
-                <Icon icon="Disconnect" width={16} height={16} />
-              </span>
-            ) : !mapItem.dbxRootPath || !mapItem.fileChannelValue.length ? (
-              <span className="cursor-pointer text-red-700" title="Remove">
-                <Icon icon="Trash" width={16} height={16} onClick={() => handleItemRemove(index)} />
-              </span>
+            {mapItem.id ? (
+              <Tooltip
+                content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
+                position="bottom"
+                tooltipClassname="text-sm"
+              >
+                <IconButton
+                  icon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSyncStatusChange(index)}
+                  color={`${mapItem.status ? '#b91c1c' : '#15803d'}`}
+                  className="cursor-pointer"
+                />
+              </Tooltip>
             ) : (
-              <Button
-                label={mapItem.status === null ? 'Syncing ...' : 'Confirm sync'}
-                size="sm"
-                disabled={mapItem.status === null ? true : mapItem.status}
-                onClick={() => handleSync(index)}
-                className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              />
+              <div className="flex items-center gap-4">
+                {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
+                  <Tooltip
+                    content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
+                    position="bottom"
+                    tooltipClassname="text-sm"
+                  >
+                    <IconButton
+                      icon="Upload"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleSync(index)}
+                      disabled={mapItem.status === null ? true : mapItem.status}
+                      className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    />
+                  </Tooltip>
+                )}
+                <Tooltip content="Remove" position="bottom" tooltipClassname="text-sm">
+                  <IconButton
+                    icon="Trash"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleItemRemove(index)}
+                  />
+                </Tooltip>
+              </div>
             )}
           </td>
         </tr>
