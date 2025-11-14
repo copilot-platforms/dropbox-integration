@@ -4,10 +4,10 @@ import { Button, Icon } from 'copilot-design-system'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
+import { useTable } from '@/features/sync/hooks/useTable'
+import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { cn } from '@/lib/utils'
 import { generateRandomString } from '@/utils/random'
-import { useTable } from '../hooks/useTable'
-import { useUserChannel } from '../hooks/useUserChannel'
 
 const MappingTableRow = () => {
   const {

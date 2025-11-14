@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, type ReactNode, useState } from 'react'
-import type { Folder, MapList, SelectorClientsCompanies } from '../types'
+import type { Folder, MapList, SelectorClientsCompanies } from '@/features/sync/types'
 
 export type UserChannelContextType = {
   userChannelList: SelectorClientsCompanies

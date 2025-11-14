@@ -1,5 +1,5 @@
+import type { SelectorClientsCompanies } from '@/features/sync/types'
 import type { UserCompanySelectorInputValue } from '@/lib/copilot/types'
-import type { SelectorClientsCompanies } from '../types'
 
 export const getCompanySelectorValue = (
   userChannelList: SelectorClientsCompanies,

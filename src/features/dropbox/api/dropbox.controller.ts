@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
+import { DropboxService } from '@/features/dropbox/lib/Dropbox.service'
 import User from '@/lib/copilot/models/User.model'
-import { DropboxService } from '../lib/Dropbox.service'
 
 export const getFolderTree = async (req: NextRequest) => {
   const token = req.nextUrl.searchParams.get('token')
