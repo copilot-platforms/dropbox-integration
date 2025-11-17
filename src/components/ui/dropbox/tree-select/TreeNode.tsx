@@ -1,6 +1,6 @@
 'use client'
 
-import { Icon } from 'copilot-design-system'
+import { Icon, IconButton } from 'copilot-design-system'
 import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/lib/utils'
 
@@ -42,24 +42,19 @@ export default function TreeNode({
         onKeyDown={() => !node.disabled && onSelect(node)}
       >
         {hasChildren && (
-          <button
-            type="button"
+          <IconButton
+            icon="ChevronRight"
+            size="sm"
+            variant="secondary"
+            className={cn('me-1 transition-transform', isExpanded && 'rotate-90')}
             onClick={(e) => {
               e.stopPropagation()
               onToggle(node.path)
             }}
-            className="rounded p-0.5 transition-colors hover:bg-accent/30"
-          >
-            <Icon
-              icon="ChevronRight"
-              width={12}
-              height={12}
-              className={cn('transition-transform', isExpanded && 'rotate-90')}
-            />
-          </button>
+          />
         )}
 
-        {!hasChildren && <div className="w-4" />}
+        {!hasChildren && <div className="w-5" />}
 
         <Icon icon="Files" color="#80A1BA" width={16} height={16} />
         <span className="flex-1 truncate text-sm">{node.label}</span>
