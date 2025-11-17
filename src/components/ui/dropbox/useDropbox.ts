@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TreeSelectNode } from './tree-select/TreeSelect'
+import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
 
 type UseTreeSelectProps = {
   options: TreeSelectNode[]
