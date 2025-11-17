@@ -140,12 +140,28 @@ export class SyncService extends AuthenticatedDropboxService {
       if (!mappedFile) {
         return
       }
-      console.info('STARTING REMOVAL FOR', mappedFile)
       if (mappedFile.assemblyFileId) {
         await copilotApi.deleteFile(mappedFile.assemblyFileId)
       }
       await this.mapFilesService.deleteFileMap(mappedFile.id)
-      console.info('REMOVED', mappedFile)
+    } catch (error: unknown) {
+      console.info('error : ', error)
+    }
+  }
+
+  async removeFileFromDropbox(payload: AssemblyToDropboxSyncFilesPayload) {
+    try {
+      const { file, opts } = payload
+      const { channelSyncId } = opts
+      const mappedFile = await this.mapFilesService.getAssemblyMappedFile(file.id, channelSyncId)
+      if (!mappedFile) {
+        return
+      }
+      const { dbxRootPath } = opts
+      const dbxFilePath = `${dbxRootPath}/${mappedFile.itemPath}`
+      const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+      await dbxClient.filesDeleteV2({ path: dbxFilePath })
+      await this.mapFilesService.deleteFileMap(mappedFile.id)
     } catch (error: unknown) {
       console.info('error : ', error)
     }

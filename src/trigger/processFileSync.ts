@@ -213,3 +213,36 @@ export const syncAssemblyFileToDropbox = task({
     await syncService.syncAssemblyFilesToDropbox({ file, opts })
   },
 })
+
+export const deleteAssemblyFileInDropbox = task({
+  id: 'delete-assembly-file-in-dropbox',
+  queue: {
+    name: 'delete-assembly-file-in-dropbox',
+    concurrencyLimit: 5,
+  },
+  retry: {
+    maxAttempts: 3,
+  },
+  run: async (payload: AssemblyToDropboxSyncFilesPayload) => {
+    const { opts } = payload
+
+    const syncService = new SyncService(opts.user, opts.connectionToken)
+    await syncService.removeFileFromDropbox(payload)
+  },
+})
+
+export const updateAssemblyFileInDropbox = task({
+  id: 'udpate-assembly-file-in-dropbox',
+  queue: {
+    name: 'update-assembly-file-in-dropbox',
+    concurrencyLimit: 5,
+  },
+  retry: {
+    maxAttempts: 3,
+  },
+  run: async (payload: AssemblyToDropboxSyncFilesPayload) => {
+    console.info('handling update for payload', payload)
+    await deleteAssemblyFileInDropbox.triggerAndWait(payload)
+    await syncAssemblyFileToDropbox.trigger(payload)
+  },
+})
