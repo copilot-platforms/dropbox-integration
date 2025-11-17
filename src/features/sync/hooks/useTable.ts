@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
+import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
-import { useUserChannel } from './useUserChannel'
 
 export const useTable = () => {
   const { user } = useAuthContext()

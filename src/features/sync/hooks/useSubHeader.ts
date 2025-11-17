@@ -1,4 +1,4 @@
-import { useUserChannel } from './useUserChannel'
+import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 
 export const useSubHeader = () => {
   const { setUserChannel } = useUserChannel()

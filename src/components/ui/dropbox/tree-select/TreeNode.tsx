@@ -1,8 +1,8 @@
 'use client'
 
 import { Icon } from 'copilot-design-system'
+import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/lib/utils'
-import type { TreeSelectNode } from './TreeSelect'
 
 interface TreeNodeProps {
   node: TreeSelectNode
