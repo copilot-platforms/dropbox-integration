@@ -89,6 +89,11 @@ export class SyncService extends AuthenticatedDropboxService {
         portalId: this.user.portalId,
       }
 
+      await this.mapFilesService.insertFileMap({
+        ...filePayload,
+        dbxFileId: lastItem ? entry.id : null,
+      })
+
       if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
         const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
         const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
@@ -107,11 +112,6 @@ export class SyncService extends AuthenticatedDropboxService {
         )
         filePayload.contentHash = entry.content_hash
       }
-
-      await this.mapFilesService.insertFileMap({
-        ...filePayload,
-        dbxFileId: lastItem ? entry.id : null,
-      })
     } catch (error: unknown) {
       if (
         error instanceof ApiError &&
@@ -140,10 +140,10 @@ export class SyncService extends AuthenticatedDropboxService {
       if (!mappedFile) {
         return
       }
+      await this.mapFilesService.deleteFileMap(mappedFile.id)
       if (mappedFile.assemblyFileId) {
         await copilotApi.deleteFile(mappedFile.assemblyFileId)
       }
-      await this.mapFilesService.deleteFileMap(mappedFile.id)
     } catch (error: unknown) {
       console.info('error : ', error)
     }
@@ -160,8 +160,8 @@ export class SyncService extends AuthenticatedDropboxService {
       const { dbxRootPath } = opts
       const dbxFilePath = `${dbxRootPath}/${mappedFile.itemPath}`
       const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
-      await dbxClient.filesDeleteV2({ path: dbxFilePath })
       await this.mapFilesService.deleteFileMap(mappedFile.id)
+      await dbxClient.filesDeleteV2({ path: dbxFilePath })
     } catch (error: unknown) {
       console.info('error : ', error)
     }
@@ -196,8 +196,6 @@ export class SyncService extends AuthenticatedDropboxService {
 
   async syncAssemblyFilesToDropbox({ file, opts }: AssemblyToDropboxSyncFilesPayload) {
     const { channelSyncId, dbxRootPath } = opts
-    const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
-
     const filePayload = {
       channelSyncId,
       itemPath: file.path,
@@ -205,6 +203,7 @@ export class SyncService extends AuthenticatedDropboxService {
       portalId: this.user.portalId,
       assemblyFileId: file.id,
     }
+    const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
     await this.mapFilesService.insertFileMap({
       ...filePayload,
       ...dbxFileInfo,

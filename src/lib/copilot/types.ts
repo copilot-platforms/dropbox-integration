@@ -192,6 +192,11 @@ export const CopilotFileRetrieveSchema = z.object({
   path: z.string(),
   status: z.string().optional(),
   downloadUrl: z.string().optional(),
+  previousAttributes: z
+    .object({
+      name: z.string().optional(),
+    })
+    .optional(),
 })
 export type CopilotFileRetrieve = z.infer<typeof CopilotFileRetrieveSchema>
 

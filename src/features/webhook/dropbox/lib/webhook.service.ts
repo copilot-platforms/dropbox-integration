@@ -110,33 +110,35 @@ export class DropboxWebhook {
     connectionToken: DropboxConnectionTokens,
   ) {
     for (const file of files) {
-      if (file['.tag'] === 'deleted') {
-        await this.handleFileDelete(
-          file,
-          mapFilesService,
-          channelSyncId,
-          dbxRootPath,
-          assemblyChannelId,
-          user,
-          connectionToken,
-        )
-        continue
-      }
-
       const existingFile = await db.query.fileFolderSync.findFirst({
         where: (fileFolderSync, { eq }) => eq(fileFolderSync.dbxFileId, z.string().parse(file.id)),
       })
-
+      if (file['.tag'] === 'deleted') {
+        existingFile &&
+          (await this.handleFileDelete(
+            file,
+            mapFilesService,
+            channelSyncId,
+            dbxRootPath,
+            assemblyChannelId,
+            user,
+            connectionToken,
+          ))
+        continue
+      }
       if (existingFile) {
-        await this.handleFileUpdate(
-          file,
-          mapFilesService,
-          channelSyncId,
-          dbxRootPath,
-          assemblyChannelId,
-          user,
-          connectionToken,
-        )
+        const hasFileChanged =
+          existingFile.contentHash !== file.content_hash || existingFile.itemPath !== file.name
+        hasFileChanged &&
+          (await this.handleFileUpdate(
+            file,
+            mapFilesService,
+            channelSyncId,
+            dbxRootPath,
+            assemblyChannelId,
+            user,
+            connectionToken,
+          ))
       } else {
         await this.handleFileInsert(file, mapFilesService, assemblyChannelId, dbxRootPath)
       }

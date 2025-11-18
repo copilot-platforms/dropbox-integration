@@ -241,7 +241,6 @@ export const updateAssemblyFileInDropbox = task({
     maxAttempts: 3,
   },
   run: async (payload: AssemblyToDropboxSyncFilesPayload) => {
-    console.info('handling update for payload', payload)
     await deleteAssemblyFileInDropbox.triggerAndWait(payload)
     await syncAssemblyFileToDropbox.trigger(payload)
   },
