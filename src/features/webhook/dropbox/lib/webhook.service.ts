@@ -1,16 +1,18 @@
 import { and, eq } from 'drizzle-orm'
-import { NextResponse } from 'next/server'
+import status from 'http-status'
 import z from 'zod'
 import env from '@/config/server.env'
 import db from '@/db'
 import { type ChannelSyncSelectType, channelSync } from '@/db/schema/channelSync.schema'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
+import APIError from '@/errors/APIError'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type {
   DropboxFileListFolderResultEntries,
   DropboxFileListFolderSingleEntry,
   DropboxToAssemblySyncFilesPayload,
 } from '@/features/sync/types'
+import { getDropboxChanges } from '@/features/webhook/dropbox/utils/getDropboxChanges'
 import { generateToken } from '@/lib/copilot/generateToken'
 import User from '@/lib/copilot/models/User.model'
 import { DropboxApi } from '@/lib/dropbox/DropboxApi'
@@ -19,14 +21,13 @@ import {
   syncDropboxFileToAssembly,
   updateDropboxFileInAssembly,
 } from '@/trigger/processFileSync'
-import { getDropboxChanges } from '../utils/getDropboxChanges'
 
 export class DropboxWebhook {
   async fetchDropBoxChanges(accountId: string) {
-    const connection = await this.getActiveConnection(accountId)
+    const connection = await this.a(accountId)
 
     if (!connection || !connection.refreshToken) {
-      return NextResponse.json({ error: 'Connection not valid' }, { status: 500 })
+      throw new APIError('Connection not valid', status.INTERNAL_SERVER_ERROR)
     }
 
     const { portalId, initiatedBy, refreshToken } = connection
@@ -213,7 +214,7 @@ export class DropboxWebhook {
     }
   }
 
-  private async getActiveConnection(accountId: string) {
+  private async a(accountId: string) {
     return await db.query.dropboxConnections.findFirst({
       where: (dropboxConnections, { eq, and }) =>
         and(eq(dropboxConnections.status, true), eq(dropboxConnections.accountId, accountId)),

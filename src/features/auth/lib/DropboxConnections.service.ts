@@ -39,6 +39,18 @@ class DropboxConnectionsService extends BaseService {
       .returning()
     return connections[0]
   }
+
+  async getActiveConnection(accountId: string) {
+    return await db.query.dropboxConnections.findFirst({
+      where: (dropboxConnections, { eq, and }) =>
+        and(eq(dropboxConnections.status, true), eq(dropboxConnections.accountId, accountId)),
+      columns: {
+        portalId: true,
+        initiatedBy: true,
+        refreshToken: true,
+      },
+    })
+  }
 }
 
 export default DropboxConnectionsService
