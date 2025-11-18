@@ -15,34 +15,6 @@
       "when": 1761810733626,
       "tag": "20251030075213_create_sync_tables",
       "breakpoints": false
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1762865586265,
-      "tag": "20251111125306_material_hannibal_king",
-      "breakpoints": false
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1762926733919,
-      "tag": "20251112055213_flawless_starhawk",
-      "breakpoints": false
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1763381442108,
-      "tag": "20251117121042_shocking_patriot",
-      "breakpoints": false
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1763450109358,
-      "tag": "20251118071509_spooky_sunset_bain",
-      "breakpoints": false
     }
   ]
 }
