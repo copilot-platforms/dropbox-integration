@@ -6,6 +6,11 @@ import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.sch
 import APIError from '@/errors/APIError'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type { AssemblyToDropboxSyncFilesPayload } from '@/features/sync/types'
+import {
+  type AssemblyWebhookEvent,
+  AssemblyWebhookSchema,
+  DISPATCHABLE_HANDLEABLE_EVENT,
+} from '@/features/webhook/assembly/utils/types'
 import type User from '@/lib/copilot/models/User.model'
 import { type CopilotFileRetrieve, CopilotFileWithObjectSchema } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
@@ -14,11 +19,6 @@ import {
   syncAssemblyFileToDropbox,
   updateAssemblyFileInDropbox,
 } from '@/trigger/processFileSync'
-import {
-  type AssemblyWebhookEvent,
-  AssemblyWebhookSchema,
-  DISPATCHABLE_HANDLEABLE_EVENT,
-} from '../utils/types'
 
 export class AssemblyWebhookService extends AuthenticatedDropboxService {
   readonly mapFilesService: MapFilesService

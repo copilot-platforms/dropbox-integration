@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
 import db from '@/db'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
+import { AssemblyWebhookService } from '@/features/webhook/assembly/lib/webhook.service'
+import { DISPATCHABLE_HANDLEABLE_EVENT } from '@/features/webhook/assembly/utils/types'
 import User from '@/lib/copilot/models/User.model'
-import { AssemblyWebhookService } from '../lib/webhook.service'
-import { DISPATCHABLE_HANDLEABLE_EVENT } from '../utils/types'
 
 export const handleWebhookEvent = async (req: NextRequest) => {
   const token = req.nextUrl.searchParams.get('token')
