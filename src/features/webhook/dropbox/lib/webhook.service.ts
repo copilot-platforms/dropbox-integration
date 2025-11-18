@@ -24,7 +24,7 @@ import {
 
 export class DropboxWebhook {
   async fetchDropBoxChanges(accountId: string) {
-    const connection = await this.a(accountId)
+    const connection = await this.getActiveConnection(accountId)
 
     if (!connection || !connection.refreshToken) {
       throw new APIError('Connection not valid', status.INTERNAL_SERVER_ERROR)
@@ -212,7 +212,7 @@ export class DropboxWebhook {
     }
   }
 
-  private async a(accountId: string) {
+  private async getActiveConnection(accountId: string) {
     return await db.query.dropboxConnections.findFirst({
       where: (dropboxConnections, { eq, and }) =>
         and(eq(dropboxConnections.status, true), eq(dropboxConnections.accountId, accountId)),
