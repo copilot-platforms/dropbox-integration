@@ -1,4 +1,4 @@
-import { task } from '@trigger.dev/sdk/v3'
+import { logger, task } from '@trigger.dev/sdk/v3'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { MAX_FILES_LIMIT } from '@/features/sync/constant'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
@@ -12,6 +12,7 @@ import { DropboxWebhook } from '@/features/webhook/dropbox/lib/webhook.service'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
 import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import { withErrorLogging } from '@/utils/withErrorLogger'
 
 type SyncTaskPayload = {
   dbxRootPath: string
@@ -36,15 +37,22 @@ export const processDropboxChanges = task({
 export const bidirectionalMasterSync = task({
   id: 'bidirectional-master-sync',
   run: async (payload: SyncTaskPayload) => {
-    await initiateAssemblyToDropboxSync.triggerAndWait(payload)
-    console.info('\n\n Synced Assembly files to Dropbox \n\n')
-    await initiateDropboxToAssemblySync.triggerAndWait(payload)
+    try {
+      await initiateAssemblyToDropboxSync.triggerAndWait(payload)
+      logger.info('\n\n Synced Assembly files to Dropbox \n\n')
+      await initiateDropboxToAssemblySync.triggerAndWait(payload)
+    } catch (error: unknown) {
+      logger.error('processFileSync#bidirectionalMasterSync', { error })
+    }
   },
 })
 
 export const initiateDropboxToAssemblySync = task({
   id: 'initiate-dropbox-to-assembly-sync',
   run: async (payload: SyncTaskPayload) => {
+    logger.info(
+      'processFileSync#initiateDropboxToAssemblySync. Syncing files from Dropbox to Assembly',
+    )
     const { dbxRootPath, assemblyChannelId, connectionToken, user } = payload
     const mapFilesService = new MapFilesService(user, connectionToken)
 
@@ -69,7 +77,7 @@ export const initiateDropboxToAssemblySync = task({
       )
 
       if (!parsedDbxFiles.success) {
-        console.error('Error parsing Dropbox files', parsedDbxFiles.error)
+        logger.error('Error parsing Dropbox files', { error: parsedDbxFiles.error })
         break
       }
       const parsedDbxEntries = parsedDbxFiles.data
@@ -128,10 +136,13 @@ export const syncDropboxFileToAssembly = task({
   retry: {
     maxAttempts: 3,
   },
-  run: async (payload: DropboxToAssemblySyncFilesPayload) => {
-    const { opts, entry } = payload
-    const syncService = new SyncService(opts.user, opts.connectionToken)
-    await syncService.syncDropboxFilesToAssembly({ entry, opts })
+  run: (payload: DropboxToAssemblySyncFilesPayload) => {
+    logger.info('processFileSync#syncDropboxFileToAssembly')
+    return withErrorLogging<DropboxToAssemblySyncFilesPayload>(payload, async () => {
+      const { opts, entry } = payload
+      const syncService = new SyncService(opts.user, opts.connectionToken)
+      await syncService.syncDropboxFilesToAssembly({ entry, opts })
+    })
   },
 })
 
@@ -170,6 +181,10 @@ export const updateDropboxFileInAssembly = task({
 export const initiateAssemblyToDropboxSync = task({
   id: 'initiate-assembly-to-dropbox-sync',
   run: async (payload: SyncTaskPayload) => {
+    logger.info(
+      'processFileSync#initiateAssemblyToDropboxSync. Syncing files from Assembly to Dropbox',
+    )
+
     const { user, connectionToken, dbxRootPath, assemblyChannelId } = payload
     const mapFilesService = new MapFilesService(user, connectionToken)
 
@@ -184,7 +199,6 @@ export const initiateAssemblyToDropboxSync = task({
     // biome-ignore lint/suspicious/noExplicitAny: just for awaiting purpose so its safe to ignore
     const batchPromises: Promise<any>[] = []
 
-    // TODO: implement bottleneck for copilot sdk
     while (files.data.length) {
       // 2. check and filter out all the mapped files
       const filteredEntries = await mapFilesService.checkAndFilterAssemblyFiles(
@@ -221,10 +235,13 @@ export const syncAssemblyFileToDropbox = task({
   retry: {
     maxAttempts: 3,
   },
-  run: async (payload: AssemblyToDropboxSyncFilesPayload) => {
-    const { opts, file } = payload
-    const syncService = new SyncService(opts.user, opts.connectionToken)
-    await syncService.syncAssemblyFilesToDropbox({ file, opts })
+  run: (payload: AssemblyToDropboxSyncFilesPayload) => {
+    logger.info('processFileSync#syncAssemblyFileToDropbox')
+    return withErrorLogging<AssemblyToDropboxSyncFilesPayload>(payload, async () => {
+      const { opts, file } = payload
+      const syncService = new SyncService(opts.user, opts.connectionToken)
+      await syncService.syncAssemblyFilesToDropbox({ file, opts })
+    })
   },
 })
 

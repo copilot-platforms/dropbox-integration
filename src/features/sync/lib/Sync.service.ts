@@ -13,6 +13,7 @@ import type {
   DropboxToAssemblySyncFilesPayload,
   WhereClause,
 } from '@/features/sync/types'
+import { copilotBottleneck } from '@/lib/copilot/bottleneck'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
 import type { CopilotFileRetrieve } from '@/lib/copilot/types'
@@ -29,7 +30,9 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
-    // bidrectional sync
+    console.info(
+      `SyncService#initiateSync. Channel ID: ${assemblyChannelId}. DBX root path: ${dbxRootPath}`,
+    )
     await bidirectionalMasterSync.trigger({
       dbxRootPath,
       assemblyChannelId,
@@ -39,27 +42,34 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async syncDropboxFilesToAssembly({ entry, opts }: DropboxToAssemblySyncFilesPayload) {
-    const { dbxRootPath, assemblyChannelId, channelSyncId } = opts
+    console.info(`SyncService#syncDropboxFilesToAssembly. Channel ID: ${opts.assemblyChannelId}`)
 
+    const { dbxRootPath, assemblyChannelId, channelSyncId } = opts
     const fileObjectType = entry['.tag']
     const basePath = entry.path_display.replace(dbxRootPath, '') // removes the base folder path
-
     const pathArray = buildPathArray(basePath) // to create a folders hierarchy if not exists
 
+    const uploadPromises = []
     for (let i = 0; i < pathArray.length; i++) {
       const lastItem = i === pathArray.length - 1
       const itemPath = pathArray[i]
 
-      await this.createAndUploadFileToAssembly(
-        assemblyChannelId,
-        itemPath,
-        lastItem,
-        fileObjectType as ObjectTypeValue,
-        channelSyncId,
-        entry,
-        basePath,
+      uploadPromises.push(
+        copilotBottleneck.schedule(() => {
+          return this.createAndUploadFileToAssembly(
+            assemblyChannelId,
+            itemPath,
+            lastItem,
+            fileObjectType as ObjectTypeValue,
+            channelSyncId,
+            entry,
+            basePath,
+          )
+        }),
       )
     }
+
+    await Promise.all(uploadPromises)
   }
 
   async createAndUploadFileToAssembly(
@@ -71,6 +81,7 @@ export class SyncService extends AuthenticatedDropboxService {
     entry: DropboxFileListFolderSingleEntry,
     basePath: string,
   ) {
+    console.info(`SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}`)
     const copilotApi = new CopilotAPI(this.user.token)
     const tempFileType = lastItem ? fileObjectType : ObjectType.FOLDER
 
@@ -98,8 +109,6 @@ export class SyncService extends AuthenticatedDropboxService {
         const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
         const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
 
-        // TODO: make sure the file binary is present in fileMetaData
-
         const downloadBody = await this.dbxApi.downloadFile(
           DBX_URL_PATH.fileDownload,
           entry?.path_display,
@@ -112,6 +121,10 @@ export class SyncService extends AuthenticatedDropboxService {
         )
         filePayload.contentHash = entry.content_hash
       }
+
+      console.info(
+        `SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}. File upload success. Type: ${tempFileType}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${lastItem ? entry.id : null}`,
+      )
     } catch (error: unknown) {
       if (
         error instanceof ApiError &&
@@ -128,6 +141,9 @@ export class SyncService extends AuthenticatedDropboxService {
         )
         return
       }
+      console.error(
+        `SyncService#createAndUploadFileToAssembly. Upload failed. Channel ID: ${assemblyChannelId}`,
+      )
       throw error
     }
   }
@@ -191,6 +207,8 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async syncAssemblyFilesToDropbox({ file, opts }: AssemblyToDropboxSyncFilesPayload) {
+    console.info(`SyncService#syncAssemblyFilesToDropbox. Channel ID: ${opts.assemblyChannelId}`)
+
     const { channelSyncId, dbxRootPath } = opts
     const filePayload = {
       channelSyncId,
@@ -204,6 +222,9 @@ export class SyncService extends AuthenticatedDropboxService {
       ...filePayload,
       ...dbxFileInfo,
     })
+    console.info(
+      `SyncService#syncAssemblyFilesToDropbox. Channel ID: ${opts.assemblyChannelId}. File upload success. Type: ${file.object}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${dbxFileInfo?.dbxFileId}`,
+    )
   }
 
   async createAndUploadFileInDropbox(
@@ -211,6 +232,8 @@ export class SyncService extends AuthenticatedDropboxService {
     fileType: ObjectTypeValue,
     file: CopilotFileRetrieve,
   ): Promise<{ dbxFileId: string; contentHash?: string } | undefined> {
+    console.info(`SyncService#createAndUploadFileInDropbox. Channel ID: ${file.channelId}`)
+
     const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
     const dbxFilePath = `${dbxRootPath}/${file.path}`
 
@@ -234,6 +257,9 @@ export class SyncService extends AuthenticatedDropboxService {
 
         return await this.uploadFileInDropbox(file, dbxFilePath)
       }
+      console.info(
+        `SyncService#createAndUploadFileInDropbox. File exists but didn't received required file tag. Type: ${dbxResponse.result['.tag']}. Channel ID: ${file.channelId}`,
+      )
     } catch (error: unknown) {
       // 2. if doesn't exist, create the file/folder
       if (
@@ -249,7 +275,11 @@ export class SyncService extends AuthenticatedDropboxService {
         } else if (fileType === ObjectType.FILE) {
           return await this.uploadFileInDropbox(file, dbxFilePath)
         }
+        console.info(
+          `SyncService#createAndUploadFileInDropbox. File type out of bound. Type: ${fileType}. Channel ID: ${file.channelId}`,
+        )
       }
+      console.error(`SyncService#createAndUploadFileInDropbox. Channel ID: ${file.channelId}`)
       throw error
     }
   }
@@ -265,6 +295,9 @@ export class SyncService extends AuthenticatedDropboxService {
         contentHash: dbxResponse.contentHash,
       }
     }
+    console.error(
+      `SyncService#uploadFileInDropbox. Assembly file with Id: ${file.id} has no download url. Channel ID: ${file.channelId}`,
+    )
     throw new Error('File not found')
   }
 }
