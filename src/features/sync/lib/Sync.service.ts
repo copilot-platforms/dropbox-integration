@@ -140,12 +140,11 @@ export class SyncService extends AuthenticatedDropboxService {
       if (!mappedFile) {
         return
       }
-      console.info('STARTING REMOVAL FOR', mappedFile)
       if (mappedFile.assemblyFileId) {
-        await copilotApi.deleteFile(mappedFile.assemblyFileId)
+        const deleteMappedFile = this.mapFilesService.deleteFileMap(mappedFile.id)
+        const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
+        await Promise.all([deleteMappedFile, deleteFileInAssembly])
       }
-      await this.mapFilesService.deleteFileMap(mappedFile.id)
-      console.info('REMOVED', mappedFile)
     } catch (error: unknown) {
       console.info('error : ', error)
     }

@@ -132,8 +132,8 @@ export const deleteDropboxFileInAssembly = task({
   },
   run: async (payload: DropboxToAssemblySyncFilesPayload) => {
     const { opts, entry } = payload
-    const { channelSyncId } = opts
-    const syncService = new SyncService(opts.user, opts.connectionToken)
+    const { channelSyncId, user, connectionToken } = opts
+    const syncService = new SyncService(user, connectionToken)
     await syncService.removeFileFromAssembly(channelSyncId, entry)
   },
 })
