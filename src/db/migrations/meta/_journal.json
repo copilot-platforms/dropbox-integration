@@ -15,6 +15,13 @@
       "when": 1762853127467,
       "tag": "20251111092527_create_sync_table",
       "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763528312131,
+      "tag": "20251119045832_add_indexes_to_sync_tables",
+      "breakpoints": false
     }
   ]
 }
