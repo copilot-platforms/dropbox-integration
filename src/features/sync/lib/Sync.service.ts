@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { DropboxResponseError } from 'dropbox'
-import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
+import httpStatus from 'http-status'
+import { ApiError as CopilotApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import fetch from 'node-fetch'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
@@ -106,18 +107,10 @@ export class SyncService extends AuthenticatedDropboxService {
       })
 
       if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
-        const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
-        const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
-
-        const downloadBody = await this.dbxApi.downloadFile(
-          DBX_URL_PATH.fileDownload,
+        await this.uploadFileInAssembly(
           entry?.path_display,
-        )
-        // upload file to assembly
-        await copilotApi.uploadFile(
           fileCreateResponse.uploadUrl,
-          fileMetaData.result.size.toString(),
-          downloadBody,
+          copilotApi,
         )
         filePayload.contentHash = entry.content_hash
       }
@@ -127,7 +120,7 @@ export class SyncService extends AuthenticatedDropboxService {
       )
     } catch (error: unknown) {
       if (
-        error instanceof ApiError &&
+        error instanceof CopilotApiError &&
         error.status === 400 &&
         error.body.message === 'Folder already exists'
       ) {
@@ -176,6 +169,22 @@ export class SyncService extends AuthenticatedDropboxService {
       await dbxClient.filesDeleteV2({ path: dbxFilePath })
     } catch (error: unknown) {
       console.info('error : ', error)
+    }
+  }
+  private async uploadFileInAssembly(dbxPath: string, uploadUrl: string, copilotApi: CopilotAPI) {
+    const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const fileMetaData = await dbxFileResponse.filesDownload({ path: dbxPath }) // get metadata for the files
+
+    const downloadBody = await this.dbxApi.downloadFile(DBX_URL_PATH.fileDownload, dbxPath)
+    // upload file to assembly
+    const fileUploadResp = await copilotApi.uploadFile(
+      uploadUrl,
+      fileMetaData.result.size.toString(),
+      downloadBody,
+    )
+    if (fileUploadResp.status !== httpStatus.OK) {
+      console.error({ error: await fileUploadResp.json() })
+      throw new Error('SyncService#uploadFileInAssemnly. Failed to upload file to assembly')
     }
   }
 

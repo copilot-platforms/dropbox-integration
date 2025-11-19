@@ -1,4 +1,5 @@
 import { Dropbox, DropboxAuth } from 'dropbox'
+import httpStatus from 'http-status'
 import { camelKeys } from 'js-convert-case'
 import fetch from 'node-fetch'
 import env from '@/config/server.env'
@@ -87,6 +88,8 @@ export class DropboxApi {
       'Dropbox-API-Arg': JSON.stringify({ path: filePath }),
     }
     const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
+    if (response.status !== httpStatus.OK)
+      throw new Error('DropboxApi#downloadFile. Failed to download file')
     return response.body
   }
 
@@ -109,6 +112,8 @@ export class DropboxApi {
       'Content-Type': 'application/octet-stream',
     }
     const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body)
+    if (response.status !== httpStatus.OK)
+      throw new Error('DropboxApi#uploadFile. Failed to upload file')
     return DropboxFileMetadataSchema.parse(camelKeys(await response.json()))
   }
 }
