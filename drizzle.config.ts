@@ -1,12 +1,12 @@
 import { defineConfig } from 'drizzle-kit'
-import { z } from 'zod'
+import env from '@/config/server.env'
 
 export default defineConfig({
   dialect: 'postgresql',
   schema: './src/db/schema',
   out: './src/db/migrations',
   dbCredentials: {
-    url: z.url({ error: 'Please provide a valid DATABASE_URL' }).parse(process.env.DATABASE_URL),
+    url: env.DATABASE_URL,
   },
   casing: 'snake_case',
   breakpoints: false, // Not required for postgres

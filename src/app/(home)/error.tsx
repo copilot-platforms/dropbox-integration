@@ -1,6 +1,8 @@
 'use client'
 
+import * as Sentry from '@sentry/nextjs'
 import { Button } from 'copilot-design-system'
+import { useEffect } from 'react'
 import Linkify from 'react-linkify'
 
 export default function ClientErrorBoundary({
@@ -10,7 +12,9 @@ export default function ClientErrorBoundary({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  console.error(error)
+  useEffect(() => {
+    Sentry.captureException(error)
+  }, [error])
 
   return (
     <main>

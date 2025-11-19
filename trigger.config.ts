@@ -1,22 +1,20 @@
-// import { syncVercelEnvVars } from '@trigger.dev/build/extensions/core'
+import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
+import * as Sentry from '@sentry/nextjs'
+import { esbuildPlugin } from '@trigger.dev/build/extensions'
 import { defineConfig } from '@trigger.dev/sdk/v3'
 import dotenv from 'dotenv'
 import z from 'zod'
 
 dotenv.config()
 
-// use relative path to import from server env or parse like below
-const project = z
-  .string({ message: 'Must have TRIGGER_PROJECT_ID in environment to run trigger jobs' })
-  .min(1)
-  .parse(process.env.TRIGGER_PROJECT_ID)
+const project = z.string().min(1).parse(process.env.TRIGGER_PROJECT_ID)
+const org = z.string().min(1).parse(process.env.SENTRY_ORG)
+const sentryProject = z.string().min(1).parse(process.env.SENTRY_PROJECT)
+const sentryAuthToken = z.string().min(1).parse(process.env.SENTRY_AUTH_TOKEN)
+const dsn = z.string().min(1).parse(process.env.NEXT_PUBLIC_SENTRY_DSN)
 
 export default defineConfig({
   project,
-  // Automatically sync env variables from Vercel to Trigger
-  // build: {
-  //   extensions: [syncVercelEnvVars()],
-  // },
   runtime: 'node',
   logLevel: 'log',
   // The max compute seconds a task is allowed to run. If the task run exceeds this duration, it will be stopped.
@@ -34,4 +32,37 @@ export default defineConfig({
     },
   },
   dirs: ['./src/trigger'],
+
+  build: {
+    extensions: [
+      esbuildPlugin(
+        sentryEsbuildPlugin({
+          org,
+          project: sentryProject,
+          // Find this auth token in settings -> developer settings -> auth tokens
+          authToken: sentryAuthToken,
+        }),
+        { placement: 'last', target: 'deploy' },
+      ),
+    ],
+  },
+  init: () => {
+    Sentry.init({
+      defaultIntegrations: false,
+      // The Data Source Name (DSN) is a unique identifier for your Sentry project.
+      dsn,
+      // Update this to match the environment you want to track errors for
+      // TODO: check for VERCEL_ENV
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    })
+  },
+  onFailure: ({ payload, error, ctx }) => {
+    console.error({ payload, error, ctx })
+    Sentry.captureException(error, {
+      extra: {
+        payload,
+        ctx,
+      },
+    })
+  },
 })
