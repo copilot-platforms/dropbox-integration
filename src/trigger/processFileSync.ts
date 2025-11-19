@@ -232,7 +232,7 @@ export const deleteAssemblyFileInDropbox = task({
 })
 
 export const updateAssemblyFileInDropbox = task({
-  id: 'udpate-assembly-file-in-dropbox',
+  id: 'update-assembly-file-in-dropbox',
   queue: {
     name: 'update-assembly-file-in-dropbox',
     concurrencyLimit: 5,
