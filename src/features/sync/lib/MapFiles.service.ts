@@ -73,6 +73,17 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return mappedFile
   }
 
+  async getAssemblyMappedFile(assemblyId: string, channelSyncId: string) {
+    const [mappedFile] = await this.getAllFileMaps(
+      and(
+        eq(fileFolderSync.channelSyncId, channelSyncId),
+        eq(fileFolderSync.assemblyFileId, assemblyId),
+        isNotNull(fileFolderSync.assemblyFileId),
+      ) as WhereClause,
+    )
+    return mappedFile
+  }
+
   async getDbxMappedFileIds(channelSyncId: string) {
     const mappedFile = await this.getAllFileMaps(
       and(

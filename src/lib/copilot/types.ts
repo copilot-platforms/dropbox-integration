@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ObjectType } from '@/db/constants'
 
 // Schema for hex color codes
 export const HexColorSchema = z
@@ -191,8 +192,17 @@ export const CopilotFileRetrieveSchema = z.object({
   path: z.string(),
   status: z.string().optional(),
   downloadUrl: z.string().optional(),
+  previousAttributes: z
+    .object({
+      name: z.string().optional(),
+    })
+    .optional(),
 })
 export type CopilotFileRetrieve = z.infer<typeof CopilotFileRetrieveSchema>
+
+export const CopilotFileWithObjectSchema = CopilotFileRetrieveSchema.extend({
+  object: z.enum(Object.values(ObjectType) as [ObjectType.FILE, ObjectType.FOLDER]),
+})
 
 export const CopilotFileListSchema = z.object({
   data: z.array(CopilotFileRetrieveSchema),

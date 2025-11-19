@@ -89,6 +89,11 @@ export class SyncService extends AuthenticatedDropboxService {
         portalId: this.user.portalId,
       }
 
+      await this.mapFilesService.insertFileMap({
+        ...filePayload,
+        dbxFileId: lastItem ? entry.id : null,
+      })
+
       if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
         const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
         const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
@@ -107,11 +112,6 @@ export class SyncService extends AuthenticatedDropboxService {
         )
         filePayload.contentHash = entry.content_hash
       }
-
-      await this.mapFilesService.insertFileMap({
-        ...filePayload,
-        dbxFileId: lastItem ? entry.id : null,
-      })
     } catch (error: unknown) {
       if (
         error instanceof ApiError &&
@@ -134,17 +134,30 @@ export class SyncService extends AuthenticatedDropboxService {
 
   async removeFileFromAssembly(channelSyncId: string, entry: DropboxFileListFolderSingleEntry) {
     const copilotApi = new CopilotAPI(this.user.token)
+    const mappedFile = await this.mapFilesService.getDbxMappedFile(entry.id, channelSyncId)
+    if (!mappedFile) {
+      return
+    }
+    if (mappedFile.assemblyFileId) {
+      const deleteMappedFile = this.mapFilesService.deleteFileMap(mappedFile.id)
+      const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
+      await Promise.all([deleteMappedFile, deleteFileInAssembly])
+    }
+  }
 
+  async removeFileFromDropbox(payload: AssemblyToDropboxSyncFilesPayload) {
     try {
-      const mappedFile = await this.mapFilesService.getDbxMappedFile(entry.id, channelSyncId)
+      const { file, opts } = payload
+      const { channelSyncId } = opts
+      const mappedFile = await this.mapFilesService.getAssemblyMappedFile(file.id, channelSyncId)
       if (!mappedFile) {
         return
       }
-      if (mappedFile.assemblyFileId) {
-        const deleteMappedFile = this.mapFilesService.deleteFileMap(mappedFile.id)
-        const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
-        await Promise.all([deleteMappedFile, deleteFileInAssembly])
-      }
+      const { dbxRootPath } = opts
+      const dbxFilePath = `${dbxRootPath}/${mappedFile.itemPath}`
+      const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+      await this.mapFilesService.deleteFileMap(mappedFile.id)
+      await dbxClient.filesDeleteV2({ path: dbxFilePath })
     } catch (error: unknown) {
       console.info('error : ', error)
     }
@@ -179,8 +192,6 @@ export class SyncService extends AuthenticatedDropboxService {
 
   async syncAssemblyFilesToDropbox({ file, opts }: AssemblyToDropboxSyncFilesPayload) {
     const { channelSyncId, dbxRootPath } = opts
-    const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
-
     const filePayload = {
       channelSyncId,
       itemPath: file.path,
@@ -188,6 +199,7 @@ export class SyncService extends AuthenticatedDropboxService {
       portalId: this.user.portalId,
       assemblyFileId: file.id,
     }
+    const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
     await this.mapFilesService.insertFileMap({
       ...filePayload,
       ...dbxFileInfo,
