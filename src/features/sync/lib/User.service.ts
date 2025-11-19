@@ -1,5 +1,4 @@
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
-
 import {
   ClientsResponseSchema,
   CompaniesResponseSchema,
