@@ -14,6 +14,8 @@ export const useTable = () => {
   const onUserSelectorValueChange = (val: UserCompanySelectorInputValue[], index: number) => {
     let fileChannelId: string | undefined
 
+    if (!val.length) return
+
     if (val[0].object === UserCompanySelectorObject.COMPANY) {
       fileChannelId = userChannelList.companies?.find(
         (company) => company.value === val[0].id,
