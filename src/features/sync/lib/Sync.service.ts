@@ -132,6 +132,24 @@ export class SyncService extends AuthenticatedDropboxService {
     }
   }
 
+  async removeFileFromAssembly(channelSyncId: string, entry: DropboxFileListFolderSingleEntry) {
+    const copilotApi = new CopilotAPI(this.user.token)
+
+    try {
+      const mappedFile = await this.mapFilesService.getDbxMappedFile(entry.id, channelSyncId)
+      if (!mappedFile) {
+        return
+      }
+      if (mappedFile.assemblyFileId) {
+        const deleteMappedFile = this.mapFilesService.deleteFileMap(mappedFile.id)
+        const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
+        await Promise.all([deleteMappedFile, deleteFileInAssembly])
+      }
+    } catch (error: unknown) {
+      console.info('error : ', error)
+    }
+  }
+
   /**
    * purpose: checks if the item is last item of the folder heirarchy and the entry is a folder.
    * if yes, update the dbxFileId to the table
