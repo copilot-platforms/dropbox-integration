@@ -9,6 +9,12 @@ export const timestamps = {
     .$onUpdate(() => new Date()),
 }
 
+// timestamp with soft delete
+export const timestampsWithSoftDelete = {
+  ...timestamps,
+  deletedAt: timestamp({ withTimezone: true, mode: 'date' }),
+}
+
 type TableColumns<TTable extends AnyPgTable> = TTable['_']['columns']
 
 /**

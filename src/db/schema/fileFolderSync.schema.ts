@@ -3,7 +3,7 @@ import { pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
 import { ObjectType } from '@/db/constants'
-import { enumToPgEnum, timestamps } from '@/db/db.helpers'
+import { enumToPgEnum, timestampsWithSoftDelete } from '@/db/db.helpers'
 import { channelSync } from '@/db/schema/channelSync.schema'
 
 export const ObjectEnum = pgEnum('object_types', enumToPgEnum(ObjectType))
@@ -22,7 +22,7 @@ export const fileFolderSync = pgTable('file_folder_sync', {
   contentHash: varchar(),
   dbxFileId: varchar(),
   assemblyFileId: uuid(),
-  ...timestamps,
+  ...timestampsWithSoftDelete,
 })
 
 export const FileSyncRelations = relations(fileFolderSync, ({ one }) => ({
