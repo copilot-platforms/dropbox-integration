@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import httpStatus from 'http-status'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import z from 'zod'
@@ -139,7 +139,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     if (!channel) {
       const newChannel = await db
         .insert(channelSync)
-        .values({ ...payload, portalId: this.user.portalId, status: false })
+        .values({ ...payload, portalId: this.user.portalId, status: null })
         .returning()
       channel = newChannel[0]
     }
@@ -165,6 +165,15 @@ export class MapFilesService extends AuthenticatedDropboxService {
       )
       .returning()
     return connections[0]
+  }
+
+  async updateChannelMapSyncedFilesCount(id: string) {
+    await db
+      .update(channelSync)
+      .set({
+        syncedFilesCount: sql`${channelSync.syncedFilesCount} + 1`,
+      })
+      .where(eq(channelSync.id, id))
   }
 
   async deleteChannelMapById(id: string) {

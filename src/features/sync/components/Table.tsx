@@ -11,6 +11,26 @@ import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { cn } from '@/lib/utils'
 import { generateRandomString } from '@/utils/random'
 
+const MappingTableStatus = ({
+  status,
+  percentage,
+}: {
+  status: boolean | null
+  percentage: number
+}) => {
+  if (status === null) return <span className="text-gray-500 text-sm">{percentage}% completed</span>
+
+  return (
+    <>
+      {status ? (
+        <span className="text-green-700 text-sm">Active</span>
+      ) : (
+        <span className="text-gray-500 text-sm">Inactive</span>
+      )}
+    </>
+  )
+}
+
 const MappingTableRow = () => {
   const {
     handleSyncStatusChange,
@@ -20,7 +40,7 @@ const MappingTableRow = () => {
     filteredValue,
     onDropboxFolderChange,
   } = useTable()
-  const { tempMapList, userChannelList } = useUserChannel()
+  const { tempMapList, userChannelList, syncedPercentage } = useUserChannel()
   const { folderTree, isFolderTreeLoading } = useFolder()
 
   if (isFolderTreeLoading) {
@@ -40,7 +60,7 @@ const MappingTableRow = () => {
           <td className="w-80 whitespace-nowrap px-6 py-2">
             <CopilotSelector
               name="File channel"
-              initialValue={getCompanySelectorValue(userChannelList, mapItem.fileChannelValue[0])}
+              initialValue={getCompanySelectorValue(userChannelList, mapItem.fileChannelValue?.[0])}
               onChange={(val) => onUserSelectorValueChange(val, index)}
             />
           </td>
@@ -53,13 +73,12 @@ const MappingTableRow = () => {
             />
           </td>
           <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
-          <td className="w-[125px] whitespace-nowrap px-6 py-2">
+          <td className="w-[160px] whitespace-nowrap px-6 py-2">
             <div className="flex items-center gap-2">
-              {mapItem.status ? (
-                <span className="text-green-700 text-sm">Active</span>
-              ) : (
-                <span className="text-gray-500 text-sm">Inactive</span>
-              )}
+              <MappingTableStatus
+                status={mapItem.status}
+                percentage={syncedPercentage?.[index] || 0}
+              />
             </div>
           </td>
           <td className="w-[150px] whitespace-nowrap px-6 py-2">
@@ -118,7 +137,7 @@ export const MappingTable = () => {
     { title: 'File Channel', key: 'fileChannel', className: 'w-80' },
     { title: 'Dropbox Folder', key: 'dropboxFolder', className: 'w-96' },
     { title: 'Last Updated', key: 'lastUpdated', className: 'w-[200px]' },
-    { title: 'Status', key: 'status', className: 'w-[125px]' },
+    { title: 'Status', key: 'status', className: 'w-[160px]' },
     { title: 'Actions', key: 'actions', className: 'w-[150px]' },
   ]
 

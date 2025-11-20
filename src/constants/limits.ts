@@ -1,1 +1,2 @@
 export const MAX_FETCH_COPILOT_RESOURCES = 1_000
+export const MAX_FETCH_DBX_RESOURCES = 2_000
