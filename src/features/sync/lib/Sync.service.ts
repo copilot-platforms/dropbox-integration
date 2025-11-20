@@ -1,23 +1,24 @@
 import { and, eq } from 'drizzle-orm'
+import { DropboxResponseError } from 'dropbox'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
+import { DBX_URL_PATH } from '@/features/sync/constant'
+import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
+import type {
+  AssemblyToDropboxSyncFilesPayload,
+  DropboxFileListFolderSingleEntry,
+  DropboxToAssemblySyncFilesPayload,
+  WhereClause,
+} from '@/features/sync/types'
+import { getFetcher } from '@/helper/fetcher.helper'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
+import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
-import { DropboxApi } from '@/lib/dropbox/DropboxApi'
-import { processDropboxSyncToAssemblyTask } from '@/trigger/processFileSync'
-import { buildPathArray } from '@/utils/filePath'
-import { MAX_FILES_LIMIT } from '../constant'
-import {
-  DropboxFileListFolderResultEntriesSchema,
-  type DropboxFileListFolderSingleEntry,
-  type DropboxToAssemblySyncFilesPayload,
-  type DropboxToAssemblySyncTaskPayload,
-  type WhereClause,
-} from '../types'
-import { MapFilesService } from './MapFiles.service'
+import { bidirectionalMasterSync } from '@/trigger/processFileSync'
+import { appendDateTimeToFilePath, buildPathArray } from '@/utils/filePath'
 
 export class SyncService extends AuthenticatedDropboxService {
   readonly mapFilesService: MapFilesService
@@ -27,75 +28,14 @@ export class SyncService extends AuthenticatedDropboxService {
     this.mapFilesService = new MapFilesService(user, connectionToken)
   }
 
-  async initiateSync(assemblyChannelId: string) {
-    // 1. expect assembly channel and dropbox folder path Inputs.
-    const dbxRootPath = '/Assembly'
-
-    // 2. sync dropbox folder to assembly channel
-    await this.processDropboxSyncToAssembly(dbxRootPath, assemblyChannelId)
-
-    // 3. TODO: sync assembly channel to dropbox folder
-  }
-
-  private async processDropboxSyncToAssembly(dbxRootPath: string, assemblyChannelId: string) {
-    // 1. store channel sync
-    const channelPayload = {
-      dbxAccountId: this.connectionToken.accountId,
-      assemblyChannelId,
+  async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
+    // bidrectional sync
+    await bidirectionalMasterSync.trigger({
       dbxRootPath,
-    }
-    const channelMap = await this.mapFilesService.getOrCreateChannelMap(channelPayload)
-
-    // 1. get all the files folder from dropbox
-    const dbxApi = new DropboxApi()
-    const dbxClient = dbxApi.getDropboxClient(this.connectionToken.refreshToken)
-
-    let dbxFiles = await dbxClient.filesListFolder({
-      path: dbxRootPath,
-      recursive: true,
-      limit: MAX_FILES_LIMIT,
+      assemblyChannelId,
+      connectionToken: this.connectionToken,
+      user: this.user,
     })
-    let loopOver = !!dbxFiles.result.entries.length
-
-    this.dbxApi.refreshAccessToken(this.connectionToken.refreshToken)
-
-    while (loopOver) {
-      const parsedDbxFiles = DropboxFileListFolderResultEntriesSchema.safeParse(
-        dbxFiles.result.entries,
-      )
-
-      if (!parsedDbxFiles.success) {
-        console.error('Error parsing Dropbox files', parsedDbxFiles.error)
-        break
-      }
-
-      const parsedDbxEntries = parsedDbxFiles.data
-      const syncTaskPayload: DropboxToAssemblySyncTaskPayload = {
-        resultEntries: parsedDbxEntries,
-        dbxRootPath,
-        assemblyChannelId,
-        channelSyncId: channelMap.id,
-        user: this.user,
-        connectionToken: this.connectionToken,
-      }
-
-      await processDropboxSyncToAssemblyTask.trigger(syncTaskPayload)
-
-      if (!dbxFiles.result.has_more || !parsedDbxEntries.length) {
-        loopOver = false
-
-        // update channelSync with lastest cursor
-        await this.mapFilesService.updateChannelMap({
-          dbxCursor: dbxFiles.result.cursor,
-        })
-        break
-      }
-
-      // continue pagination
-      dbxFiles = await dbxClient.filesListFolderContinue({
-        cursor: dbxFiles.result.cursor,
-      })
-    }
   }
 
   async syncDropboxFilesToAssembly({ entry, opts }: DropboxToAssemblySyncFilesPayload) {
@@ -108,7 +48,6 @@ export class SyncService extends AuthenticatedDropboxService {
 
     for (let i = 0; i < pathArray.length; i++) {
       const lastItem = i === pathArray.length - 1
-
       const itemPath = pathArray[i]
 
       await this.createAndUploadFileToAssembly(
@@ -150,21 +89,29 @@ export class SyncService extends AuthenticatedDropboxService {
         portalId: this.user.portalId,
       }
 
-      if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
-        const dbxArrayBuffer = await this.dbxApi.downloadFile(
-          '/2/files/download',
-          entry?.path_display,
-        )
-        // upload file to assembly
-        await copilotApi.uploadFile(fileCreateResponse.uploadUrl, dbxArrayBuffer)
-
-        filePayload.contentHash = entry.content_hash
-      }
-
       await this.mapFilesService.insertFileMap({
         ...filePayload,
         dbxFileId: lastItem ? entry.id : null,
       })
+
+      if (fileObjectType === ObjectType.FILE && fileCreateResponse.uploadUrl && lastItem) {
+        const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+        const fileMetaData = await dbxFileResponse.filesDownload({ path: entry?.path_display }) // get metadata for the files
+
+        // TODO: make sure the file binary is present in fileMetaData
+
+        const downloadBody = await this.dbxApi.downloadFile(
+          DBX_URL_PATH.fileDownload,
+          entry?.path_display,
+        )
+        // upload file to assembly
+        await copilotApi.uploadFile(
+          fileCreateResponse.uploadUrl,
+          fileMetaData.result.size.toString(),
+          downloadBody,
+        )
+        filePayload.contentHash = entry.content_hash
+      }
     } catch (error: unknown) {
       if (
         error instanceof ApiError &&
@@ -181,8 +128,38 @@ export class SyncService extends AuthenticatedDropboxService {
         )
         return
       }
-      console.error(error)
       throw error
+    }
+  }
+
+  async removeFileFromAssembly(channelSyncId: string, entry: DropboxFileListFolderSingleEntry) {
+    const copilotApi = new CopilotAPI(this.user.token)
+    const mappedFile = await this.mapFilesService.getDbxMappedFile(entry.id, channelSyncId)
+    if (!mappedFile) {
+      return
+    }
+    if (mappedFile.assemblyFileId) {
+      const deleteMappedFile = this.mapFilesService.deleteFileMap(mappedFile.id)
+      const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
+      await Promise.all([deleteMappedFile, deleteFileInAssembly])
+    }
+  }
+
+  async removeFileFromDropbox(payload: AssemblyToDropboxSyncFilesPayload) {
+    try {
+      const { file, opts } = payload
+      const { channelSyncId } = opts
+      const mappedFile = await this.mapFilesService.getAssemblyMappedFile(file.id, channelSyncId)
+      if (!mappedFile) {
+        return
+      }
+      const { dbxRootPath } = opts
+      const dbxFilePath = `${dbxRootPath}/${mappedFile.itemPath}`
+      const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+      await this.mapFilesService.deleteFileMap(mappedFile.id)
+      await dbxClient.filesDeleteV2({ path: dbxFilePath })
+    } catch (error: unknown) {
+      console.info('error : ', error)
     }
   }
 
@@ -211,5 +188,83 @@ export class SyncService extends AuthenticatedDropboxService {
         fileMapCondition,
       )
     }
+  }
+
+  async syncAssemblyFilesToDropbox({ file, opts }: AssemblyToDropboxSyncFilesPayload) {
+    const { channelSyncId, dbxRootPath } = opts
+    const filePayload = {
+      channelSyncId,
+      itemPath: file.path,
+      object: file.object,
+      portalId: this.user.portalId,
+      assemblyFileId: file.id,
+    }
+    const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
+    await this.mapFilesService.insertFileMap({
+      ...filePayload,
+      ...dbxFileInfo,
+    })
+  }
+
+  async createAndUploadFileInDropbox(
+    dbxRootPath: string,
+    fileType: ObjectTypeValue,
+    file: CopilotFileRetrieve,
+  ): Promise<{ dbxFileId: string; contentHash?: string } | undefined> {
+    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxFilePath = `${dbxRootPath}/${file.path}`
+
+    // create file/folder
+    try {
+      // 1. check if the file/folder exists
+      const dbxResponse = await dbxClient.filesGetMetadata({
+        path: dbxFilePath,
+      })
+      // 1.1 if folder exists, simply return the folder id
+      if (dbxResponse.result['.tag'] === ObjectType.FOLDER) {
+        return { dbxFileId: dbxResponse.result.id }
+      } else if (dbxResponse.result['.tag'] === ObjectType.FILE) {
+        // 1.2 if file exists, rename the existing file in Dropbox and create a new file
+        const newFilePath = appendDateTimeToFilePath(dbxFilePath)
+
+        await dbxClient.filesMoveV2({
+          from_path: dbxFilePath,
+          to_path: newFilePath,
+        })
+
+        return await this.uploadFileInDropbox(file, dbxFilePath)
+      }
+    } catch (error: unknown) {
+      // 2. if doesn't exist, create the file/folder
+      if (
+        error instanceof DropboxResponseError &&
+        error.status === 409 &&
+        error.error.error.path['.tag'] === 'not_found'
+      ) {
+        if (fileType === ObjectType.FOLDER) {
+          const folderCreateResponse = await dbxClient.filesCreateFolderV2({
+            path: dbxFilePath,
+          })
+          return { dbxFileId: folderCreateResponse.result.metadata.id }
+        } else if (fileType === ObjectType.FILE) {
+          return await this.uploadFileInDropbox(file, dbxFilePath)
+        }
+      }
+      throw error
+    }
+  }
+
+  private async uploadFileInDropbox(file: CopilotFileRetrieve, path: string) {
+    if (file.downloadUrl) {
+      // download file from Assembly
+      const resp = await getFetcher(file.downloadUrl)
+      // upload file to dropbox
+      const dbxResponse = await this.dbxApi.uploadFile(DBX_URL_PATH.fileUpload, path, resp.body)
+      return {
+        dbxFileId: dbxResponse.id,
+        contentHash: dbxResponse.contentHash,
+      }
+    }
+    throw new Error('File not found')
   }
 }

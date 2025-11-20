@@ -1,8 +1,18 @@
 // import { syncVercelEnvVars } from '@trigger.dev/build/extensions/core'
 import { defineConfig } from '@trigger.dev/sdk/v3'
+import dotenv from 'dotenv'
+import z from 'zod'
+
+dotenv.config()
+
+// use relative path to import from server env or parse like below
+const project = z
+  .string({ message: 'Must have TRIGGER_PROJECT_ID in environment to run trigger jobs' })
+  .min(1)
+  .parse(process.env.TRIGGER_PROJECT_ID)
 
 export default defineConfig({
-  project: 'proj_eqvtkedzcivbzbvzqgxk',
+  project,
   // Automatically sync env variables from Vercel to Trigger
   // build: {
   //   extensions: [syncVercelEnvVars()],

@@ -3,7 +3,7 @@ import { boolean, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
 import { timestamps } from '@/db/db.helpers'
-import { fileFolderSync } from './fileFolderSync.schema'
+import { fileFolderSync } from '@/db/schema/fileFolderSync.schema'
 
 export const channelSync = pgTable('channel_sync', {
   id: uuid().primaryKey().notNull().defaultRandom(),
@@ -12,7 +12,7 @@ export const channelSync = pgTable('channel_sync', {
   assemblyChannelId: varchar({ length: 255 }).notNull(), // Assembly channel ID
   dbxRootPath: varchar().notNull(),
   dbxCursor: varchar(),
-  status: boolean().notNull().default(false), // Connection status
+  status: boolean().default(false), // TODO: make this enum with values like 'pending', 'syncing', 'synced'
   ...timestamps,
 })
 

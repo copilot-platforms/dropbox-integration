@@ -6,6 +6,7 @@ import z from 'zod'
 import env from '@/config/server.env'
 import { MAX_FETCH_COPILOT_RESOURCES } from '@/constants/limits'
 import type { ObjectTypeValue } from '@/db/constants'
+import { MAX_FILES_LIMIT } from '@/features/sync/constant'
 import { putFetcher } from '@/helper/fetcher.helper'
 import {
   type ClientRequest,
@@ -17,7 +18,11 @@ import {
   type CompanyCreateRequest,
   type CompanyResponse,
   CompanyResponseSchema,
+  CopilotFileChannelListSchema,
+  CopilotFileChannelRetrieveSchema,
   CopilotFileCreateSchema,
+  type CopilotFileList,
+  CopilotFileListSchema,
   type CopilotListArgs,
   type CopilotPrice,
   CopilotPriceSchema,
@@ -193,8 +198,35 @@ export class CopilotAPI {
     return CopilotFileCreateSchema.parse(createFileResponse)
   }
 
-  async _uploadFile(url: string, body: ArrayBuffer) {
-    return await putFetcher(url, { body })
+  /**
+   * Description: this function streams the file to Assembly. @param body is the readable stream of the file.
+   * For the stream to work we need to add the duplex: 'half' option to the fetch call.
+   * Since assembly uploads the file to s3 bucket, we need to set the content length of the file.
+   */
+  async _uploadFile(url: string, contentLength: string, body: NodeJS.ReadableStream | null) {
+    const headers = {
+      'Content-Length': contentLength, // need to set the content length to stream the file to s3 bucket
+    }
+    return await putFetcher(url, headers, { body, duplex: 'half' }) // duplex: half for readable stream
+  }
+
+  async _deleteFile(id: string) {
+    return await this.copilot.deleteFile({ id })
+  }
+
+  async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {
+    const list = await this.copilot.listFiles({ channelId, nextToken, limit: MAX_FILES_LIMIT })
+    return CopilotFileListSchema.parse(list)
+  }
+
+  async _retrieveFileChannel(id: string) {
+    const fileChannel = await this.copilot.retrieveFileChannel({ id })
+    return CopilotFileChannelRetrieveSchema.parse(fileChannel)
+  }
+
+  async _listFileChannels(args: CopilotListArgs & { companyId?: string; clientId?: string } = {}) {
+    const list = await this.copilot.listFileChannels(args)
+    return CopilotFileChannelListSchema.parse(list.data)
   }
 
   private wrapWithRetry<Args extends unknown[], R>(
@@ -222,4 +254,8 @@ export class CopilotAPI {
   getPricesById = this.wrapWithRetry(this._getPrices)
   createFile = this.wrapWithRetry(this._createFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
+  deleteFile = this.wrapWithRetry(this._deleteFile)
+  listFiles = this.wrapWithRetry(this._listFiles)
+  retrieveFileChannel = this.wrapWithRetry(this._retrieveFileChannel)
+  listFileChannels = this.wrapWithRetry(this._listFileChannels)
 }

@@ -9,15 +9,15 @@ export const Callout = () => {
   const { user, connectionStatus } = useAuthContext()
 
   return (
-    <div className="flex items-center justify-center py-5">
+    <div className="px-10 py-5">
       {!connectionStatus ? (
-        <Button
-          label="Initiate Dropbox connection"
-          onClick={() => window.open(`${authInitUrl}${user.token}`)}
-        />
-      ) : (
-        <div className="font-bold text-xl">Connected to Dropbox</div>
-      )}
+        <div className="flex justify-center">
+          <Button
+            label="Initiate Dropbox connection"
+            onClick={() => window.open(`${authInitUrl}${user.token}`)}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

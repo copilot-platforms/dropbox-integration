@@ -3,7 +3,7 @@
   "name": "dropbox-integration",
   "version": "0.1.0",
   "scripts": {
-    "trigger:dev": "npx trigger.dev@4.0.4 dev",
+    "trigger:dev": "npx trigger.dev@4.0.6 dev",
     "dev": "npx concurrently --kill-others --names \"next,trigger\" --prefix-colors \"yellow,blue\" \"next dev --turbopack\" \"npm run trigger:dev\"",
     "build": "next build --turbopack",
     "build:all": "sh scripts/build/build.sh",
@@ -18,10 +18,13 @@
     "supabase:dev": "supabase start --ignore-health-check"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "4.0.4",
+    "@trigger.dev/sdk": "4.0.6",
     "bottleneck": "^2.19.5",
-    "copilot-design-system": "^2.2.3",
+    "camelcase-keys": "^10.0.1",
+    "clsx": "^2.1.1",
+    "copilot-design-system": "^2.2.6",
     "copilot-node-sdk": "^3.16.0",
+    "dayjs": "^1.11.19",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",
@@ -29,11 +32,13 @@
     "http-status": "^2.1.0",
     "js-convert-case": "^4.2.0",
     "next": "15.5.0",
+    "node-fetch": "^3.3.2",
     "p-retry": "^7.0.0",
     "postgres": "^3.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-linkify": "1.0.0-alpha",
+    "tailwind-merge": "^3.3.1",
     "zod": "^4.1.1"
   },
   "devDependencies": {
@@ -43,7 +48,7 @@
     "@commitlint/types": "^19.8.1",
     "@supabase/supabase-js": "^2.56.1",
     "@tailwindcss/postcss": "^4",
-    "@trigger.dev/build": "4.0.4",
+    "@trigger.dev/build": "4.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
