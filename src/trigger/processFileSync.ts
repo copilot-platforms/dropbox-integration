@@ -8,6 +8,7 @@ import {
   DropboxFileListFolderResultEntriesSchema,
   type DropboxToAssemblySyncFilesPayload,
 } from '@/features/sync/types'
+import { DropboxWebhook } from '@/features/webhook/dropbox/lib/webhook.service'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
 import { DropboxApi } from '@/lib/dropbox/DropboxApi'
@@ -18,6 +19,19 @@ type SyncTaskPayload = {
   connectionToken: DropboxConnectionTokens
   user: User
 }
+
+export const processDropboxChanges = task({
+  id: 'process-dropbox-changes',
+  queue: {
+    name: 'process-dropbox-changes',
+    concurrencyLimit: 1,
+  },
+  run: async (accountId: string) => {
+    const dropboxWebhook = new DropboxWebhook()
+
+    await dropboxWebhook.fetchDropBoxChanges(accountId)
+  },
+})
 
 export const bidirectionalMasterSync = task({
   id: 'bidirectional-master-sync',
