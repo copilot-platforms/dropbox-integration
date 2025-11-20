@@ -12,7 +12,7 @@ export const channelSync = pgTable('channel_sync', {
   assemblyChannelId: varchar({ length: 255 }).notNull(), // Assembly channel ID
   dbxRootPath: varchar().notNull(),
   dbxCursor: varchar(),
-  status: boolean().default(false), // Connection status
+  status: boolean().default(false), // TODO: make this enum with values like 'pending', 'syncing', 'synced'
   ...timestamps,
 })
 
