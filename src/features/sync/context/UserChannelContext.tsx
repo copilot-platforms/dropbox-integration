@@ -7,6 +7,7 @@ export type UserChannelContextType = {
   userChannelList: SelectorClientsCompanies
   mapList: MapList[]
   tempMapList: MapList[]
+  syncedPercentage?: { [key: string]: number }
 }
 
 export const UserChannelContext = createContext<
@@ -27,6 +28,7 @@ export const UserChannelContextProvider = ({
     userChannelList,
     mapList,
     tempMapList,
+    syncedPercentage: {},
   })
 
   return (

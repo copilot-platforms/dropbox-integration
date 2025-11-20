@@ -3,6 +3,7 @@ import { DropboxResponseError } from 'dropbox'
 import httpStatus from 'http-status'
 import { ApiError as CopilotApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import fetch from 'node-fetch'
+import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
@@ -28,6 +29,25 @@ export class SyncService extends AuthenticatedDropboxService {
   constructor(user: User, connectionToken: DropboxConnectionTokens) {
     super(user, connectionToken)
     this.mapFilesService = new MapFilesService(user, connectionToken)
+  }
+
+  async calculateTotalFilesCount(assemblyChannelId: string, dbxRootPath: string) {
+    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxFilesList = dbxClient.filesListFolder({
+      path: dbxRootPath,
+      recursive: true,
+      limit: MAX_FETCH_DBX_RESOURCES,
+    })
+    const assemblyFilesList = this.user.copilot.listFiles(assemblyChannelId)
+    const [dbxFiles, assemblyFiles] = await Promise.all([dbxFilesList, assemblyFilesList])
+
+    const totalFilesCount = dbxFiles.result.entries.length + assemblyFiles.data.length - 1 // Note: subtract 1 to exclude the dbx root folder
+    await this.mapFilesService.getOrCreateChannelMap({
+      totalFilesCount,
+      assemblyChannelId,
+      dbxRootPath,
+      dbxAccountId: this.connectionToken.accountId,
+    })
   }
 
   async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
@@ -118,6 +138,7 @@ export class SyncService extends AuthenticatedDropboxService {
       console.info(
         `SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}. File upload success. Type: ${tempFileType}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${lastItem ? entry.id : null}`,
       )
+      await this.mapFilesService.updateChannelMapSyncedFilesCount(channelSyncId)
     } catch (error: unknown) {
       if (
         error instanceof CopilotApiError &&
@@ -234,6 +255,7 @@ export class SyncService extends AuthenticatedDropboxService {
     console.info(
       `SyncService#syncAssemblyFilesToDropbox. Channel ID: ${opts.assemblyChannelId}. File upload success. Type: ${file.object}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${dbxFileInfo?.dbxFileId}`,
     )
+    await this.mapFilesService.updateChannelMapSyncedFilesCount(channelSyncId)
   }
 
   async createAndUploadFileInDropbox(

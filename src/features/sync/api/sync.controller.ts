@@ -15,14 +15,19 @@ export const initiateSync = async (req: NextRequest) => {
   if (!connection.accountId) throw new Error('No accountId found')
 
   const body = await req.json()
-  const parsedBody = FileSyncCreateRequestSchema.parse(body)
+  const { fileChannelId, dbxRootPath } = FileSyncCreateRequestSchema.parse(body)
 
   // 2. get the channelId from the user
   const syncService = new SyncService(user, {
     refreshToken: connection.refreshToken,
     accountId: connection.accountId,
   })
-  await syncService.initiateSync(parsedBody.fileChannelId, parsedBody.dbxRootPath)
+
+  // 3. get total files count (sum of all files in file channel + files in dropbox path)
+  await syncService.calculateTotalFilesCount(fileChannelId, dbxRootPath)
+
+  // 4. start sync
+  await syncService.initiateSync(fileChannelId, dbxRootPath)
 
   return NextResponse.json({ message: 'Sync initiated successfully' })
 }

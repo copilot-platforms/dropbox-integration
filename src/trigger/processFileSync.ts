@@ -90,7 +90,7 @@ export const initiateDropboxToAssemblySync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncDropboxFileToAssembly.batchTrigger(filteredEntries)
+        const batchPromise = syncDropboxFileToAssembly.batchTriggerAndWait(filteredEntries)
         batchPromises.push(batchPromise)
       }
 
@@ -208,7 +208,7 @@ export const initiateAssemblyToDropboxSync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
+        const batchPromise = syncAssemblyFileToDropbox.batchTriggerAndWait(filteredEntries)
         batchPromises.push(batchPromise)
       }
 

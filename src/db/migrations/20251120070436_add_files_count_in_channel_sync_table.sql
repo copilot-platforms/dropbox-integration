@@ -1,0 +1,1 @@
+ALTER TABLE "channel_sync" ADD COLUMN "total_files_count" integer DEFAULT 0 NOT NULL, ADD COLUMN "synced_files_count" integer DEFAULT 0 NOT NULL;
