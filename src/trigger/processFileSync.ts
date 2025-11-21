@@ -173,7 +173,11 @@ export const updateDropboxFileInAssembly = task({
   retry: {
     maxAttempts: 3,
   },
-  run: async (payload: DropboxToAssemblySyncFilesPayload) => {
+  run: async (payload: DropboxToAssemblySyncFilesPayload & { deleteFlag?: boolean }) => {
+    const { deleteFlag } = payload
+    if (deleteFlag) {
+      await deleteDropboxFileInAssembly.triggerAndWait(payload)
+    }
     await syncDropboxFileToAssembly.trigger(payload) //only insert, delete is already handled
   },
 })
