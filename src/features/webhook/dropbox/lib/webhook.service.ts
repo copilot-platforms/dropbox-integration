@@ -129,7 +129,7 @@ export class DropboxWebhook {
       }
       if (existingFile) {
         const hasFileChanged =
-          existingFile.contentHash !== file.content_hash ||
+          (existingFile.contentHash && existingFile.contentHash !== file.content_hash) ||
           existingFile.itemPath?.split('/').pop() !== file.name //handle update only if the contents OR name of the file are changed on incoming file/folder.
         hasFileChanged &&
           (await this.handleFileUpdate(

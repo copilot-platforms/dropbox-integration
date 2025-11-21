@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { DropboxResponseError } from 'dropbox'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
+import fetch from 'node-fetch'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
@@ -12,7 +13,6 @@ import type {
   DropboxToAssemblySyncFilesPayload,
   WhereClause,
 } from '@/features/sync/types'
-import { getFetcher } from '@/helper/fetcher.helper'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
 import type { CopilotFileRetrieve } from '@/lib/copilot/types'
@@ -257,7 +257,7 @@ export class SyncService extends AuthenticatedDropboxService {
   private async uploadFileInDropbox(file: CopilotFileRetrieve, path: string) {
     if (file.downloadUrl) {
       // download file from Assembly
-      const resp = await getFetcher(file.downloadUrl)
+      const resp = await fetch(file.downloadUrl)
       // upload file to dropbox
       const dbxResponse = await this.dbxApi.uploadFile(DBX_URL_PATH.fileUpload, path, resp.body)
       return {

@@ -67,8 +67,9 @@ export class UserService extends BaseService {
           avatarFallbackColor: company.fallbackColor,
           companyId: company.id,
           type: 'company' as const,
-          fileChannelId: fileChannels.find((fileChannel) => fileChannel.companyId === company.id)
-            ?.id,
+          fileChannelId: fileChannels.find(
+            (fileChannel) => fileChannel.companyId === company.id && !fileChannel.clientId,
+          )?.id,
         }))
         .filter((company) => !!company.fileChannelId),
     }

@@ -43,6 +43,9 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
       DISPATCHABLE_HANDLEABLE_EVENT.FileCreated,
       DISPATCHABLE_HANDLEABLE_EVENT.FileDeleted,
       DISPATCHABLE_HANDLEABLE_EVENT.FileUpdated,
+      DISPATCHABLE_HANDLEABLE_EVENT.FolderCreated,
+      DISPATCHABLE_HANDLEABLE_EVENT.FolderDeleted,
+      DISPATCHABLE_HANDLEABLE_EVENT.FolderUpdated,
     ].includes(eventType)
     return isValidWebhook ? eventType : null
   }

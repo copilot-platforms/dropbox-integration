@@ -1,9 +1,11 @@
 'use client'
 
-import { Button, Icon } from 'copilot-design-system'
+import { IconButton, Tooltip } from 'copilot-design-system'
+import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
+import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useTable } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { cn } from '@/lib/utils'
@@ -11,35 +13,47 @@ import { generateRandomString } from '@/utils/random'
 
 const MappingTableRow = () => {
   const {
+    handleSyncStatusChange,
     handleItemRemove,
     handleSync,
     onUserSelectorValueChange,
     filteredValue,
     onDropboxFolderChange,
   } = useTable()
-  const { folderTree, tempMapList, userChannelList } = useUserChannel()
+  const { tempMapList, userChannelList } = useUserChannel()
+  const { folderTree, isFolderTreeLoading } = useFolder()
+
+  if (isFolderTreeLoading) {
+    return (
+      <tr>
+        <td colSpan={5} className="py-4">
+          <Loader size={5} />
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <>
       {tempMapList.map((mapItem, index) => (
         <tr key={`${generateRandomString(8)}-${index}`}>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-80 whitespace-nowrap px-6 py-2">
             <CopilotSelector
               name="File channel"
               initialValue={getCompanySelectorValue(userChannelList, mapItem.fileChannelValue[0])}
               onChange={(val) => onUserSelectorValueChange(val, index)}
             />
           </td>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-96 whitespace-nowrap px-6 py-2">
             <TreeSelect
               value={filteredValue?.[index] || mapItem.dbxRootPath}
               onChange={(val) => onDropboxFolderChange(val, index)}
               options={folderTree}
-              placeholder="Select Dropbox folder"
+              placeholder="Search Dropbox folder"
             />
           </td>
-          <td className="whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
-          <td className="whitespace-nowrap px-6 py-2">
+          <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
+          <td className="w-[125px] whitespace-nowrap px-6 py-2">
             <div className="flex items-center gap-2">
               {mapItem.status ? (
                 <span className="text-green-700 text-sm">Active</span>
@@ -48,23 +62,49 @@ const MappingTableRow = () => {
               )}
             </div>
           </td>
-          <td className="whitespace-nowrap px-6 py-2">
-            {mapItem.status ? (
-              <span className="cursor-pointer text-red-700" title="Disconnet sync">
-                <Icon icon="Disconnect" width={16} height={16} />
-              </span>
-            ) : !mapItem.dbxRootPath || !mapItem.fileChannelValue.length ? (
-              <span className="cursor-pointer text-red-700" title="Remove">
-                <Icon icon="Trash" width={16} height={16} onClick={() => handleItemRemove(index)} />
-              </span>
+          <td className="w-[150px] whitespace-nowrap px-6 py-2">
+            {mapItem.id ? (
+              <Tooltip
+                content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
+                position="bottom"
+                tooltipClassname="text-sm"
+              >
+                <IconButton
+                  icon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSyncStatusChange(index)}
+                  color={`${mapItem.status ? '#b91c1c' : '#15803d'}`}
+                  className="cursor-pointer"
+                />
+              </Tooltip>
             ) : (
-              <Button
-                label={mapItem.status === null ? 'Syncing ...' : 'Confirm sync'}
-                size="sm"
-                disabled={mapItem.status === null ? true : mapItem.status}
-                onClick={() => handleSync(index)}
-                className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              />
+              <div className="flex items-center gap-3">
+                {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
+                  <Tooltip
+                    content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
+                    position="bottom"
+                    tooltipClassname="text-sm"
+                  >
+                    <IconButton
+                      icon="Upload"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleSync(index)}
+                      disabled={mapItem.status === null ? true : mapItem.status}
+                      className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    />
+                  </Tooltip>
+                )}
+                <Tooltip content="Remove" position="bottom" tooltipClassname="text-sm">
+                  <IconButton
+                    icon="Trash"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleItemRemove(index)}
+                  />
+                </Tooltip>
+              </div>
             )}
           </td>
         </tr>
@@ -75,7 +115,7 @@ const MappingTableRow = () => {
 
 export const MappingTable = () => {
   const columns = [
-    { title: 'File Channel', key: 'fileChannel', className: 'w-72' },
+    { title: 'File Channel', key: 'fileChannel', className: 'w-80' },
     { title: 'Dropbox Folder', key: 'dropboxFolder', className: 'w-96' },
     { title: 'Last Updated', key: 'lastUpdated', className: 'w-[200px]' },
     { title: 'Status', key: 'status', className: 'w-[125px]' },
