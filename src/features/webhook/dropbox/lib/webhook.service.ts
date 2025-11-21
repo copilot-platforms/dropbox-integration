@@ -128,13 +128,13 @@ export class DropboxWebhook {
         continue
       }
       const hasFileChanged =
-        !!existingFile &&
-        ((existingFile.contentHash && existingFile.contentHash !== file.content_hash) ||
-          existingFile.itemPath !== file.path_display.replace(dbxRootPath, ''))
+        !!existingFile && existingFile.itemPath !== file.path_display.replace(dbxRootPath, '')
       if (!existingFile) {
         await this.handleFileInsert(file, mapFilesService, assemblyChannelId, dbxRootPath)
       }
       if (hasFileChanged) {
+        const hasContentChanged =
+          !!existingFile.contentHash && existingFile.contentHash !== file.content_hash
         await this.handleFileUpdate(
           file,
           mapFilesService,
@@ -143,6 +143,7 @@ export class DropboxWebhook {
           assemblyChannelId,
           user,
           connectionToken,
+          hasContentChanged,
         )
       }
     }
@@ -198,6 +199,7 @@ export class DropboxWebhook {
     assemblyChannelId: string,
     user: User,
     connectionToken: DropboxConnectionTokens,
+    deleteFlag: boolean = false,
   ) {
     const mappedEntry = await mapFilesService.getDbxMappedFile(file.id, channelSyncId)
 
@@ -212,7 +214,7 @@ export class DropboxWebhook {
           connectionToken,
         },
       }
-      await updateDropboxFileInAssembly.trigger(payload)
+      await updateDropboxFileInAssembly.trigger({ ...payload, deleteFlag })
     }
   }
 
