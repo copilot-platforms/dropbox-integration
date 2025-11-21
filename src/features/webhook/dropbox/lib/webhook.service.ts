@@ -131,22 +131,23 @@ export class DropboxWebhook {
           ))
         continue
       }
-      if (existingFile) {
-        const hasFileChanged =
-          (existingFile.contentHash && existingFile.contentHash !== file.content_hash) ||
-          existingFile.itemPath?.split('/').pop() !== file.name //handle update only if the contents OR name of the file are changed on incoming file/folder.
-        hasFileChanged &&
-          (await this.handleFileUpdate(
-            file,
-            mapFilesService,
-            channelSyncId,
-            dbxRootPath,
-            assemblyChannelId,
-            user,
-            connectionToken,
-          ))
-      } else {
+      const hasFileChanged =
+        !!existingFile &&
+        ((existingFile.contentHash && existingFile.contentHash !== file.content_hash) ||
+          existingFile.itemPath !== file.path_display.replace(dbxRootPath, ''))
+      if (!existingFile) {
         await this.handleFileInsert(file, mapFilesService, assemblyChannelId, dbxRootPath)
+      }
+      if (hasFileChanged) {
+        await this.handleFileUpdate(
+          file,
+          mapFilesService,
+          channelSyncId,
+          dbxRootPath,
+          assemblyChannelId,
+          user,
+          connectionToken,
+        )
       }
     }
   }

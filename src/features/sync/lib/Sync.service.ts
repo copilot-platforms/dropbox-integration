@@ -242,7 +242,7 @@ export class SyncService extends AuthenticatedDropboxService {
     const { channelSyncId, dbxRootPath } = opts
     const filePayload = {
       channelSyncId,
-      itemPath: file.path,
+      itemPath: `/${file.path}`, //appending '/' to maintain consistency
       object: file.object,
       portalId: this.user.portalId,
       assemblyFileId: file.id,
