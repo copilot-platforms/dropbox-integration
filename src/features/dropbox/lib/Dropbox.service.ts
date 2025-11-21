@@ -1,4 +1,6 @@
 import type { files } from 'dropbox'
+import httpStatus from 'http-status'
+import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { ObjectType } from '@/db/constants'
 import APIError from '@/errors/APIError'
 import type { Folder } from '@/features/sync/types'
@@ -8,16 +10,22 @@ export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree() {
     this.dbxApi.refreshAccessToken(this.connectionToken.refreshToken)
     const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
-    const dbxResponse = await dbxClient.filesListFolder({
+    let dbxResponse = await dbxClient.filesListFolder({
       path: '',
       recursive: true,
-      limit: 1000,
+      limit: MAX_FETCH_DBX_RESOURCES,
     })
-    if (dbxResponse.status !== 200) {
+    let entries = dbxResponse.result.entries
+    if (dbxResponse.status !== httpStatus.OK) {
       throw new APIError('Cannot fetch the folders', dbxResponse.status)
     }
 
-    return this.buildFolderTree(dbxResponse.result.entries)
+    while (dbxResponse.result.has_more) {
+      dbxResponse = await dbxClient.filesListFolderContinue({ cursor: dbxResponse.result.cursor })
+      entries = entries.concat(dbxResponse.result.entries)
+    }
+
+    return this.buildFolderTree(entries)
   }
 
   private buildFolderTree(entries: files.ListFolderResult['entries']) {
