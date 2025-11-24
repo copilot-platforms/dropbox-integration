@@ -13,6 +13,7 @@ export const useSubHeader = () => {
           fileChannelValue: [],
           status: false,
           fileChannelId: '',
+          lastSyncedAt: null,
         },
       ],
     }))

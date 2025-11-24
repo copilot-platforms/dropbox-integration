@@ -1,6 +1,8 @@
+import httpStatus from 'http-status'
 import { type NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
 import db from '@/db'
+import APIError from '@/errors/APIError'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import { AssemblyWebhookService } from '@/features/webhook/assembly/lib/webhook.service'
 import { DISPATCHABLE_HANDLEABLE_EVENT } from '@/features/webhook/assembly/utils/types'
@@ -14,8 +16,8 @@ export const handleWebhookEvent = async (req: NextRequest) => {
   const dropboxConnectionService = new DropboxConnectionsService(user)
   const connection = await dropboxConnectionService.getConnectionForWorkspace()
 
-  if (!connection.refreshToken) throw new Error('No refresh token found')
-  if (!connection.accountId) throw new Error('No accountId found')
+  if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.NOT_FOUND)
+  if (!connection.accountId) throw new APIError('No accountId found', httpStatus.NOT_FOUND)
 
   const assemblyWebhookService = new AssemblyWebhookService(user, {
     refreshToken: connection.refreshToken,
