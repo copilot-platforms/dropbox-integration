@@ -35,7 +35,7 @@ export default function TreeNode({
           'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5',
           isSelected && 'bg-accent text-accent-foreground',
           node.disabled && 'cursor-not-allowed opacity-50',
-          'hover:bg-gray-50',
+          'hover:bg-gray-100',
         )}
         style={{ paddingLeft: `${level * 20 + 8}px` }}
         onClick={() => !node.disabled && onSelect(node)}
@@ -45,7 +45,7 @@ export default function TreeNode({
           <IconButton
             icon="ChevronRight"
             size="sm"
-            variant="secondary"
+            variant="minimal"
             className={cn('me-1 transition-transform', isExpanded && 'rotate-90')}
             onClick={(e) => {
               e.stopPropagation()
@@ -54,7 +54,7 @@ export default function TreeNode({
           />
         )}
 
-        {!hasChildren && <div className="w-5" />}
+        {!hasChildren && <div className="w-8" />}
 
         <Icon icon="Files" color="#80A1BA" width={16} height={16} />
         <span className="flex-1 truncate text-sm">{node.label}</span>
