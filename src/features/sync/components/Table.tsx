@@ -109,8 +109,8 @@ const MappingTableRow = () => {
                     tooltipClassname="text-sm"
                   >
                     <IconButton
-                      icon="Upload"
-                      variant="secondary"
+                      icon="Check"
+                      variant="primary"
                       size="sm"
                       onClick={() => handleSync(index)}
                       disabled={mapItem.status === null ? true : mapItem.status}
