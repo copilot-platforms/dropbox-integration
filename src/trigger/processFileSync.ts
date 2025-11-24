@@ -120,6 +120,7 @@ export const initiateDropboxToAssemblySync = task({
     await mapFilesService.updateChannelMap(
       {
         status: true,
+        lastSyncedAt: new Date(),
       },
       assemblyChannelId,
       dbxRootPath,

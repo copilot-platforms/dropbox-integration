@@ -1,6 +1,7 @@
 'use client'
 
 import { IconButton, Tooltip } from 'copilot-design-system'
+import TimeAgo from 'react-timeago'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
@@ -72,7 +73,9 @@ const MappingTableRow = () => {
               placeholder="Search Dropbox folder"
             />
           </td>
-          <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">-</td>
+          <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
+            {mapItem.status && mapItem.lastSyncedAt ? <TimeAgo date={mapItem.lastSyncedAt} /> : '-'}
+          </td>
           <td className="w-[160px] whitespace-nowrap px-6 py-2">
             <div className="flex items-center gap-2">
               <MappingTableStatus

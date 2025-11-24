@@ -167,6 +167,18 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return connections[0]
   }
 
+  async updateChannelMapById(
+    payload: ChannelSyncUpdatePayload,
+    id: string,
+  ): Promise<ChannelSyncSelectType> {
+    const [connection] = await db
+      .update(channelSync)
+      .set(payload)
+      .where(eq(channelSync.id, id))
+      .returning()
+    return connection
+  }
+
   async updateChannelMapSyncedFilesCount(id: string) {
     await db
       .update(channelSync)
@@ -215,29 +227,30 @@ export class MapFilesService extends AuthenticatedDropboxService {
     })
     const fileIds = await this.getDbxMappedFileIds(channelMap.id)
 
-    const mappedEntries = parsedDbxEntries.map((entry) => {
-      const fileObjectType = entry['.tag']
-      if (
-        (fileObjectType === ObjectType.FOLDER && entry.path_display !== dbxRootPath) ||
-        fileObjectType === ObjectType.FILE
-      ) {
-        if (!fileIds.includes(entry.id))
-          return {
-            payload: {
-              opts: {
-                dbxRootPath,
-                assemblyChannelId,
-                channelSyncId: channelMap.id,
-                user: this.user,
-                connectionToken: this.connectionToken,
+    return parsedDbxEntries
+      .map((entry) => {
+        const fileObjectType = entry['.tag']
+        if (
+          (fileObjectType === ObjectType.FOLDER && entry.path_display !== dbxRootPath) ||
+          fileObjectType === ObjectType.FILE
+        ) {
+          if (!fileIds.includes(entry.id))
+            return {
+              payload: {
+                opts: {
+                  dbxRootPath,
+                  assemblyChannelId,
+                  channelSyncId: channelMap.id,
+                  user: this.user,
+                  connectionToken: this.connectionToken,
+                },
+                entry,
               },
-              entry,
-            },
-          }
-      }
-      return null
-    })
-    return mappedEntries.filter((entry) => !!entry)
+            }
+        }
+        return null
+      })
+      .filter((entry) => !!entry)
   }
 
   async checkAndFilterAssemblyFiles(
@@ -329,6 +342,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
         dbxRootPath: channelMap.dbxRootPath,
         status: channelMap.status,
         fileChannelId: fileChannel.id,
+        lastSyncedAt: channelMap.lastSyncedAt,
       }
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === httpStatus.BAD_REQUEST) {

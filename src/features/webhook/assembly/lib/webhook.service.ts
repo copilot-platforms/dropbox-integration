@@ -54,7 +54,7 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     const channel = await this.mapFilesService.getAllChannelMaps(
       eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
     )
-    const { dbxRootPath } = channel[0]
+    const { dbxRootPath, id: channelSyncId } = channel[0]
     const file = webhookEvent.data
     const filteredEntries = await this.mapFilesService.checkAndFilterAssemblyFiles(
       [file],
@@ -63,6 +63,7 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     )
 
     await syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
+    await this.updateLastSynced(channelSyncId)
   }
 
   async handleFileDeleted(webhookEvent: AssemblyWebhookEvent) {
@@ -86,6 +87,7 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
       }
 
       await deleteAssemblyFileInDropbox.trigger(payload)
+      await this.updateLastSynced(channelSyncId) // this updates the last synced timestamp for the channel. This runs before
     }
   }
 
@@ -110,6 +112,16 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
       }
 
       await updateAssemblyFileInDropbox.trigger(payload)
+      await this.updateLastSynced(channelSyncId)
     }
+  }
+
+  private async updateLastSynced(channelSyncId: string) {
+    await this.mapFilesService.updateChannelMapById(
+      {
+        lastSyncedAt: new Date(),
+      },
+      channelSyncId,
+    )
   }
 }

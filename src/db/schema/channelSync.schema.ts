@@ -1,5 +1,14 @@
 import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm'
-import { boolean, index, integer, pgTable, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import type z from 'zod'
 import { timestampsWithSoftDelete } from '@/db/db.helpers'
@@ -18,6 +27,7 @@ export const channelSync = pgTable(
     // totalFilesCount and syncedFilesCount columns helps to calculate the progress of sync
     totalFilesCount: integer().default(0).notNull(),
     syncedFilesCount: integer().default(0).notNull(),
+    lastSyncedAt: timestamp({ withTimezone: true, mode: 'date' }),
     ...timestampsWithSoftDelete,
   },
   (table) => [

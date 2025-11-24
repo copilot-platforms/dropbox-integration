@@ -121,6 +121,7 @@ export type MapList = {
   dbxRootPath: string
   status: boolean | null
   fileChannelId: string
+  lastSyncedAt: Date | null
 }
 
 export const UpdateConnectionStatusSchema = z.object({

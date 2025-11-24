@@ -62,6 +62,7 @@ export class DropboxWebhook {
     user: User,
     connectionToken: DropboxConnectionTokens,
   ) {
+    console.info(`webhookService#processChannelChanges. ChannelId: ${channel.id}`)
     const { id: channelSyncId, dbxRootPath, assemblyChannelId, dbxCursor } = channel
     let hasMore = true
     let currentCursor = dbxCursor ?? ''
@@ -98,7 +99,10 @@ export class DropboxWebhook {
       )
     }
 
-    await this.updateChannelCursor(channelSyncId, currentCursor)
+    await mapFilesService.updateChannelMapById(
+      { dbxCursor: currentCursor, lastSyncedAt: new Date() },
+      channelSyncId,
+    )
   }
 
   private async handleChannelFileChanges(
@@ -226,11 +230,4 @@ export class DropboxWebhook {
       },
     })
   } // should have been resuable but this is only needed while consuming webhook events from dropbox.
-
-  private async updateChannelCursor(channelSyncId: string, newCursor: string) {
-    await db
-      .update(channelSync)
-      .set({ dbxCursor: newCursor })
-      .where(eq(channelSync.id, channelSyncId))
-  }
 }
