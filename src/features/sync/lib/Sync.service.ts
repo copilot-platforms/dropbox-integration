@@ -184,7 +184,7 @@ export class SyncService extends AuthenticatedDropboxService {
         return
       }
       const { dbxRootPath } = opts
-      const dbxFilePath = `${dbxRootPath}/${mappedFile.itemPath}`
+      const dbxFilePath = `${dbxRootPath}${mappedFile.itemPath}`
       const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
       await this.mapFilesService.deleteFileMap(mappedFile.id)
       await dbxClient.filesDeleteV2({ path: dbxFilePath })
