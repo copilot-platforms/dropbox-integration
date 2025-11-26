@@ -36,3 +36,7 @@ export function appendDateTimeToFilePath(filePath: string): string {
   // Return the new path
   return `${dir}${filename} (${timestamp}).${ext}`
 }
+
+export function getPathFromRoot(path: string, root: string) {
+  return path.replace(root, '')
+}
