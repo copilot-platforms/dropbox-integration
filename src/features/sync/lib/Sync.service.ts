@@ -21,7 +21,7 @@ import type User from '@/lib/copilot/models/User.model'
 import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import { bidirectionalMasterSync } from '@/trigger/processFileSync'
-import { appendDateTimeToFilePath, buildPathArray } from '@/utils/filePath'
+import { appendDateTimeToFilePath, buildPathArray, getPathFromRoot } from '@/utils/filePath'
 
 export class SyncService extends AuthenticatedDropboxService {
   readonly mapFilesService: MapFilesService
@@ -121,7 +121,7 @@ export class SyncService extends AuthenticatedDropboxService {
         portalId: this.user.portalId,
       }
 
-      await this.mapFilesService.insertFileMap({
+      const mappedFile = await this.mapFilesService.insertFileMap({
         ...filePayload,
         dbxFileId: lastItem ? entry.id : null,
       })
@@ -132,7 +132,12 @@ export class SyncService extends AuthenticatedDropboxService {
           fileCreateResponse.uploadUrl,
           copilotApi,
         )
-        filePayload.contentHash = entry.content_hash
+        await this.mapFilesService.updateFileMap(
+          {
+            contentHash: entry.content_hash,
+          },
+          eq(fileFolderSync.id, mappedFile.id),
+        )
       }
 
       console.info(
@@ -162,9 +167,18 @@ export class SyncService extends AuthenticatedDropboxService {
     }
   }
 
-  async removeFileFromAssembly(channelSyncId: string, entry: DropboxFileListFolderSingleEntry) {
+  async removeFileFromAssembly(
+    channelSyncId: string,
+    dbxRootPath: string,
+    entry: DropboxFileListFolderSingleEntry,
+  ) {
     const copilotApi = new CopilotAPI(this.user.token)
-    const mappedFile = await this.mapFilesService.getDbxMappedFile(entry.id, channelSyncId)
+    const mappedFile = await this.mapFilesService.getDbxMappedFile(
+      entry.id,
+      channelSyncId,
+      getPathFromRoot(entry.path_display, dbxRootPath), // the file path ensures the file to be deleted
+    )
+
     if (!mappedFile) {
       return
     }
@@ -189,7 +203,11 @@ export class SyncService extends AuthenticatedDropboxService {
       await this.mapFilesService.deleteFileMap(mappedFile.id)
       await dbxClient.filesDeleteV2({ path: dbxFilePath })
     } catch (error: unknown) {
-      console.info('error : ', error)
+      if (error instanceof DropboxResponseError) {
+        console.info({ err: error.error })
+      } else {
+        console.error('error : ', error)
+      }
     }
   }
   private async uploadFileInAssembly(dbxPath: string, uploadUrl: string, copilotApi: CopilotAPI) {

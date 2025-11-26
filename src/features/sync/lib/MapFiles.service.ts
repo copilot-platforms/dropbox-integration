@@ -68,11 +68,12 @@ export class MapFilesService extends AuthenticatedDropboxService {
     return connections[0]
   }
 
-  async getDbxMappedFile(dbxId: string, channelSyncId: string) {
+  async getDbxMappedFile(dbxId: string, channelSyncId: string, path: string) {
     const [mappedFile] = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
         eq(fileFolderSync.dbxFileId, dbxId),
+        eq(fileFolderSync.itemPath, path),
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
@@ -215,6 +216,9 @@ export class MapFilesService extends AuthenticatedDropboxService {
     })
   }
 
+  /**
+   * Returns unmapped Dropbox files
+   */
   async checkAndFilterDbxFiles(
     parsedDbxEntries: DropboxFileListFolderResultEntries,
     dbxRootPath: string,
@@ -253,6 +257,9 @@ export class MapFilesService extends AuthenticatedDropboxService {
       .filter((entry) => !!entry)
   }
 
+  /**
+   * Returns unmapped Assembly files
+   */
   async checkAndFilterAssemblyFiles(
     files: CopilotFileList['data'],
     dbxRootPath: string,

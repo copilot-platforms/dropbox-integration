@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { NextRequest } from 'next/server'
 import type { ObjectTypeValue } from '@/db/constants'
 import { channelSync } from '@/db/schema/channelSync.schema'
@@ -52,8 +52,13 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
 
   async handleFileCreated(webhookEvent: AssemblyWebhookEvent) {
     const channel = await this.mapFilesService.getAllChannelMaps(
-      eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+      and(
+        eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+        eq(channelSync.status, true),
+      ),
     )
+    if (!channel.length) return
+
     const { dbxRootPath, id: channelSyncId } = channel[0]
     const file = webhookEvent.data
     const filteredEntries = await this.mapFilesService.checkAndFilterAssemblyFiles(
@@ -62,15 +67,22 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
       webhookEvent.data.channelId,
     )
 
-    await syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
-    await this.updateLastSynced(channelSyncId)
+    if (filteredEntries.length) {
+      await syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
+      await this.updateLastSynced(channelSyncId)
+    }
   }
 
   async handleFileDeleted(webhookEvent: AssemblyWebhookEvent) {
     const file = webhookEvent.data
     const channel = await this.mapFilesService.getAllChannelMaps(
-      eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+      and(
+        eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+        eq(channelSync.status, true),
+      ),
     )
+    if (!channel.length) return
+
     const { dbxRootPath, assemblyChannelId, id: channelSyncId } = channel[0]
     const user = this.user
     const connectionToken = this.connectionToken
@@ -94,8 +106,13 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
   async handleFileUpdated(webhookEvent: AssemblyWebhookEvent) {
     const file = webhookEvent.data
     const channel = await this.mapFilesService.getAllChannelMaps(
-      eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+      and(
+        eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
+        eq(channelSync.status, true),
+      ),
     )
+    if (!channel.length) return
+
     const { dbxRootPath, assemblyChannelId, id: channelSyncId } = channel[0]
     const user = this.user
     const connectionToken = this.connectionToken

@@ -1,12 +1,17 @@
 import { logger, task } from '@trigger.dev/sdk/v3'
+import { and, eq, isNotNull } from 'drizzle-orm'
+import z from 'zod'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
+import { fileFolderSync } from '@/db/schema/fileFolderSync.schema'
 import { MAX_FILES_LIMIT } from '@/features/sync/constant'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import { SyncService } from '@/features/sync/lib/Sync.service'
 import {
   type AssemblyToDropboxSyncFilesPayload,
+  type DropboxFileListFolderResultEntries,
   DropboxFileListFolderResultEntriesSchema,
   type DropboxToAssemblySyncFilesPayload,
+  type WhereClause,
 } from '@/features/sync/types'
 import { DropboxWebhook } from '@/features/webhook/dropbox/lib/webhook.service'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
@@ -21,6 +26,15 @@ type SyncTaskPayload = {
   user: User
 }
 
+type HandleChannelFilePayload = {
+  files: DropboxFileListFolderResultEntries
+  channelSyncId: string
+  dbxRootPath: string
+  assemblyChannelId: string
+  user: User
+  connectionToken: DropboxConnectionTokens
+}
+
 export const processDropboxChanges = task({
   id: 'process-dropbox-changes',
   queue: {
@@ -29,7 +43,9 @@ export const processDropboxChanges = task({
   },
   run: async (accountId: string) => {
     const dropboxWebhook = new DropboxWebhook()
-
+    console.info(
+      `processFileSync#processDropboxChanges, Process start for account ID: ${accountId}`,
+    )
     await dropboxWebhook.fetchDropBoxChanges(accountId)
   },
 })
@@ -147,6 +163,110 @@ export const syncDropboxFileToAssembly = task({
   },
 })
 
+export const handleChannelFileChanges = task({
+  id: 'handle-channel-file-changes',
+  queue: {
+    name: 'handle-channel-file-changes',
+    concurrencyLimit: 1,
+  },
+  run: async (payload: HandleChannelFilePayload) => {
+    const { files, channelSyncId, dbxRootPath, assemblyChannelId, user, connectionToken } = payload
+    const mapFilesService = new MapFilesService(user, connectionToken)
+    const mappedFiles = await mapFilesService.getAllFileMaps(
+      and(
+        eq(fileFolderSync.channelSyncId, channelSyncId),
+        isNotNull(fileFolderSync.dbxFileId),
+      ) as WhereClause,
+    )
+    const mappedIds = mappedFiles.map((item) => z.string().parse(item.dbxFileId))
+    const deletedIds: string[] = []
+
+    // TODO: need to refactor this function
+
+    /**
+     * Deleted files are handled in batch, so filtering out deleted files
+     */
+    const deletedFiles = files
+      .map((entry) => {
+        if (entry['.tag'] === 'deleted' && mappedIds.includes(entry.id)) {
+          deletedIds.push(entry.id)
+          return {
+            payload: {
+              opts: {
+                dbxRootPath,
+                assemblyChannelId,
+                channelSyncId,
+                user,
+                connectionToken,
+              },
+              entry,
+            },
+          }
+        }
+        return null
+      })
+      .filter((item) => !!item)
+
+    const remainingIds = mappedIds.filter((id) => !deletedIds.includes(id))
+    const newFileIds: string[] = []
+
+    /**
+     * Files which are new are also processed in batch, so filtering out new files
+     */
+    const newFiles = files
+      .map((entry) => {
+        if (entry['.tag'] !== 'deleted' && !remainingIds.includes(entry.id)) {
+          newFileIds.push(entry.id)
+          return {
+            payload: {
+              opts: {
+                dbxRootPath,
+                assemblyChannelId,
+                channelSyncId,
+                user,
+                connectionToken,
+              },
+              entry,
+            },
+          }
+        }
+        return null
+      })
+      .filter((item) => !!item)
+
+    /**
+     * First create and then delete the files. This ensures the files safety.
+     * This section should handle file rename, folder rename cases
+     */
+    if (newFiles.length) await syncDropboxFileToAssembly.batchTriggerAndWait(newFiles)
+    if (deletedFiles.length) await deleteDropboxFileInAssembly.batchTriggerAndWait(deletedFiles)
+
+    // Filtering out remaining files that are not new files and are not deleted. Only content updated files are handled below this.
+    const remainingFiles = files.filter(
+      (singleFile) => singleFile['.tag'] !== 'deleted' && !newFileIds.includes(singleFile.id),
+    )
+
+    if (remainingFiles.length) {
+      for (const file of remainingFiles) {
+        const existingFile = mappedFiles.find((item) => item.dbxFileId === file.id)
+
+        if (existingFile?.contentHash && existingFile.contentHash !== file.content_hash) {
+          await updateDropboxFileInAssembly.trigger({
+            opts: {
+              dbxRootPath,
+              assemblyChannelId,
+              channelSyncId,
+              user,
+              connectionToken,
+            },
+            entry: file,
+          })
+        }
+      }
+    }
+  },
+})
+
 export const deleteDropboxFileInAssembly = task({
   id: 'delete-dropbox-file-in-assembly',
   queue: {
@@ -158,9 +278,9 @@ export const deleteDropboxFileInAssembly = task({
   },
   run: async (payload: DropboxToAssemblySyncFilesPayload) => {
     const { opts, entry } = payload
-    const { channelSyncId, user, connectionToken } = opts
+    const { channelSyncId, user, connectionToken, dbxRootPath } = opts
     const syncService = new SyncService(user, connectionToken)
-    await syncService.removeFileFromAssembly(channelSyncId, entry)
+    await syncService.removeFileFromAssembly(channelSyncId, dbxRootPath, entry)
   },
 })
 
@@ -173,12 +293,9 @@ export const updateDropboxFileInAssembly = task({
   retry: {
     maxAttempts: 3,
   },
-  run: async (payload: DropboxToAssemblySyncFilesPayload & { deleteFlag?: boolean }) => {
-    const { deleteFlag } = payload
-    if (deleteFlag) {
-      await deleteDropboxFileInAssembly.triggerAndWait(payload)
-    }
-    await syncDropboxFileToAssembly.trigger(payload) //only insert, delete is already handled
+  run: async (payload: DropboxToAssemblySyncFilesPayload) => {
+    await deleteDropboxFileInAssembly.triggerAndWait(payload)
+    await syncDropboxFileToAssembly.trigger(payload)
   },
 })
 
