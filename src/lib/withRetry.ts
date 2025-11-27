@@ -1,5 +1,6 @@
 // import * as Sentry from '@sentry/nextjs'
 
+import Sentry from '@sentry/nextjs'
 import pRetry from 'p-retry'
 import type { StatusableError } from '@/errors/BaseServerError'
 
@@ -11,34 +12,31 @@ export const withRetry = async <Args extends unknown[], R>(
     maxTimeout: number
   },
 ): Promise<R> => {
-  // TODO: Uncomment after Sentry integration
-  // const isEventProcessorRegistered = false
+  let isEventProcessorRegistered = false
 
   return await pRetry(
     async () => {
-      // TODO: Uncomment after Sentry integration
-      // try {
-      //   return await fn(...args)
-      // } catch (error) {
-      // Hopefully now sentry doesn't report retry errors as well. We have enough triage issues as it is
-      // Sentry.withScope((scope) => {
-      //   if (isEventProcessorRegistered) return
-      //   isEventProcessorRegistered = true
-      //   scope.addEventProcessor((event) => {
-      //     if (
-      //       event.level === 'error' &&
-      //       event.message &&
-      //       event.message.includes('An error occurred during retry')
-      //     ) {
-      //       return null // Discard the event as it occured during retry
-      //     }
-      //     return event
-      //   })
-      // })
-      // Rethrow the error so pRetry can retry
-      // throw error
-      // }
-      return await fn(...args)
+      try {
+        return await fn(...args)
+      } catch (error) {
+        // Hopefully now sentry doesn't report retry errors as well. We have enough triage issues as it is
+        Sentry.withScope((scope) => {
+          if (isEventProcessorRegistered) return
+          isEventProcessorRegistered = true
+          scope.addEventProcessor((event) => {
+            if (
+              event.level === 'error' &&
+              event.message &&
+              event.message.includes('An error occurred during retry')
+            ) {
+              return null // Discard the event as it occured during retry
+            }
+            return event
+          })
+        })
+        // Rethrow the error so pRetry can retry
+        throw error
+      }
     },
 
     {
