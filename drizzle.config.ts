@@ -1,12 +1,12 @@
 import { defineConfig } from 'drizzle-kit'
-import env from '@/config/server.env'
 
 export default defineConfig({
   dialect: 'postgresql',
   schema: './src/db/schema',
   out: './src/db/migrations',
   dbCredentials: {
-    url: env.DATABASE_URL,
+    // biome-ignore lint/style/noNonNullAssertion: validateEnv already gets run before migrations
+    url: process.env.DATABASE_URL!,
   },
   casing: 'snake_case',
   breakpoints: false, // Not required for postgres
