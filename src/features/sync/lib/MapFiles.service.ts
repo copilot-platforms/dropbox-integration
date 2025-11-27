@@ -326,7 +326,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
         const fileObjectType = entry['.tag']
         if (
           (fileObjectType === ObjectType.FOLDER && entry.path_display !== dbxRootPath) ||
-          fileObjectType === ObjectType.FILE
+          (fileObjectType === ObjectType.FILE && entry.content_hash) // prevent files that are empty and has no content.
         ) {
           if (!fileIds.includes(entry.id))
             return {

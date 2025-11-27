@@ -9,14 +9,13 @@ import logger from '@/lib/logger'
 
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree() {
-    this.dbxApi.refreshAccessToken(this.connectionToken.refreshToken)
     const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
     let dbxResponse = await dbxClient.filesListFolder({
       path: '',
       recursive: true,
       limit: MAX_FETCH_DBX_RESOURCES,
     })
-    let entries = dbxResponse.result.entries
+    let entries = dbxResponse.result.entries || []
     if (dbxResponse.status !== httpStatus.OK) {
       throw new APIError('Cannot fetch the folders', dbxResponse.status)
     }

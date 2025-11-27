@@ -10,7 +10,6 @@ export async function getDropboxChanges(
   mapFilesService: MapFilesService,
   channelSyncId: string,
 ) {
-  dbxApi.refreshAccessToken(refreshToken)
   const dbx = dbxApi.getDropboxClient(refreshToken)
 
   try {

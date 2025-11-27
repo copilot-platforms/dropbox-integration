@@ -56,81 +56,89 @@ const MappingTableRow = () => {
 
   return (
     <>
-      {tempMapList.map((mapItem, index) => (
-        <tr key={`${generateRandomString(8)}-${index}`}>
-          <td className="w-80 whitespace-nowrap px-6 py-2">
-            <CopilotSelector
-              name="File channel"
-              initialValue={getCompanySelectorValue(userChannelList, mapItem.fileChannelValue?.[0])}
-              onChange={(val) => onUserSelectorValueChange(val, index)}
-            />
-          </td>
-          <td className="w-96 whitespace-nowrap px-6 py-2">
-            <TreeSelect
-              value={filteredValue?.[index] || mapItem.dbxRootPath}
-              onChange={(val) => onDropboxFolderChange(val, index)}
-              options={folderTree}
-              placeholder="Search Dropbox folder"
-            />
-          </td>
-          <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
-            {mapItem.status && mapItem.lastSyncedAt ? <TimeAgo date={mapItem.lastSyncedAt} /> : '-'}
-          </td>
-          <td className="w-[160px] whitespace-nowrap px-6 py-2">
-            <div className="flex items-center gap-2">
-              <MappingTableStatus
-                status={mapItem.status}
-                percentage={syncedPercentage?.[index] || 0}
-              />
-            </div>
-          </td>
-          <td className="w-[150px] whitespace-nowrap px-6 py-2">
-            {mapItem.id ? (
-              <Tooltip
-                content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
-                position="bottom"
-                tooltipClassname="text-sm"
-              >
-                <IconButton
-                  icon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleSyncStatusChange(index)}
-                  color={`${mapItem.status ? '#b91c1c' : '#15803d'}`}
-                  className="cursor-pointer"
-                />
-              </Tooltip>
-            ) : (
-              <div className="flex items-center gap-3">
-                {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
-                  <Tooltip
-                    content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
-                    position="bottom"
-                    tooltipClassname="text-sm"
-                  >
-                    <IconButton
-                      icon="Check"
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleSync(index)}
-                      disabled={mapItem.status === null ? true : mapItem.status}
-                      className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                    />
-                  </Tooltip>
+      {tempMapList.length &&
+        tempMapList.map((mapItem, index) => (
+          <tr key={`${generateRandomString(8)}-${index}`}>
+            <td className="w-80 whitespace-nowrap px-6 py-2">
+              <CopilotSelector
+                name="File channel"
+                initialValue={getCompanySelectorValue(
+                  userChannelList,
+                  mapItem.fileChannelValue?.[0],
                 )}
-                <Tooltip content="Remove" position="bottom" tooltipClassname="text-sm">
+                onChange={(val) => onUserSelectorValueChange(val, index)}
+              />
+            </td>
+            <td className="w-96 whitespace-nowrap px-6 py-2">
+              <TreeSelect
+                value={filteredValue?.[index] || mapItem.dbxRootPath}
+                onChange={(val) => onDropboxFolderChange(val, index)}
+                options={folderTree}
+                placeholder="Search Dropbox folder"
+              />
+            </td>
+            <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
+              {mapItem.status && mapItem.lastSyncedAt ? (
+                <TimeAgo date={mapItem.lastSyncedAt} />
+              ) : (
+                '-'
+              )}
+            </td>
+            <td className="w-[160px] whitespace-nowrap px-6 py-2">
+              <div className="flex items-center gap-2">
+                <MappingTableStatus
+                  status={mapItem.status}
+                  percentage={syncedPercentage?.[index] || 0}
+                />
+              </div>
+            </td>
+            <td className="w-[150px] whitespace-nowrap px-6 py-2">
+              {mapItem.id ? (
+                <Tooltip
+                  content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
+                  position="bottom"
+                  tooltipClassname="text-sm"
+                >
                   <IconButton
-                    icon="Trash"
+                    icon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
                     size="sm"
                     variant="secondary"
-                    onClick={() => handleItemRemove(index)}
+                    onClick={() => handleSyncStatusChange(index)}
+                    color={`${mapItem.status ? '#b91c1c' : '#15803d'}`}
+                    className="cursor-pointer"
                   />
                 </Tooltip>
-              </div>
-            )}
-          </td>
-        </tr>
-      ))}
+              ) : (
+                <div className="flex items-center gap-3">
+                  {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
+                    <Tooltip
+                      content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
+                      position="bottom"
+                      tooltipClassname="text-sm"
+                    >
+                      <IconButton
+                        icon="Check"
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleSync(index)}
+                        disabled={mapItem.status === null ? true : mapItem.status}
+                        className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      />
+                    </Tooltip>
+                  )}
+                  <Tooltip content="Remove" position="bottom" tooltipClassname="text-sm">
+                    <IconButton
+                      icon="Trash"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleItemRemove(index)}
+                    />
+                  </Tooltip>
+                </div>
+              )}
+            </td>
+          </tr>
+        ))}
     </>
   )
 }
