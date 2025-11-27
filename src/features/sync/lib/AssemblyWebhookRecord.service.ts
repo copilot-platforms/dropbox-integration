@@ -1,10 +1,12 @@
 import { and, eq } from 'drizzle-orm'
+import status from 'http-status'
 import db from '@/db'
 import {
   assemblyWebhookRecord,
   type WebhookRecordCreateType,
   type WebhookRecordSelectType,
 } from '@/db/schema/assemblyWebhookRecords.schema'
+import APIError from '@/errors/APIError'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 
 export class AssemblyWebhookRecordService extends AuthenticatedDropboxService {
@@ -28,12 +30,16 @@ export class AssemblyWebhookRecordService extends AuthenticatedDropboxService {
 
     if (!record) {
       console.info(`Webhook event does not exists. Creating ...`)
-      const [webhookRecord] = await db
-        .insert(assemblyWebhookRecord)
-        .values({ ...payload, portalId: this.user.portalId })
-        .returning()
-      record = webhookRecord
-      isCreated = true
+      try {
+        const [webhookRecord] = await db
+          .insert(assemblyWebhookRecord)
+          .values({ ...payload, portalId: this.user.portalId })
+          .returning()
+        record = webhookRecord
+        isCreated = true
+      } catch (_e: unknown) {
+        throw new APIError('Skipping duplicate webhook record', status.OK)
+      }
     }
 
     return { item: record, isCreated }
