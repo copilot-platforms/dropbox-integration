@@ -25,9 +25,9 @@ export const handleWebhookEvent = async (req: NextRequest) => {
     accountId: connection.accountId,
   })
   const webhookEvent = await assemblyWebhookService.parseWebhook(req)
-  logger.info(`Event triggered. Type: ${webhookEvent.eventType}`)
+  logger.info(`Event triggered. ${JSON.stringify(webhookEvent)}`)
 
-  const eventType = await assemblyWebhookService.validateHandleableEvent(webhookEvent)
+  const eventType = assemblyWebhookService.validateHandleableEvent(webhookEvent)
   if (!eventType) {
     return NextResponse.json({})
   }

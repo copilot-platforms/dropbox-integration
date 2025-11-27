@@ -116,7 +116,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
         eq(fileFolderSync.assemblyFileId, assemblyId),
-        isNotNull(fileFolderSync.assemblyFileId),
+        isNotNull(fileFolderSync.dbxFileId),
       ) as WhereClause,
     )
     logger.info('MapFilesService#getAssemblyMappedFile :: Got assembly mapped file', mappedFile)

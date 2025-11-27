@@ -106,7 +106,7 @@ export const initiateDropboxToAssemblySync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncDropboxFileToAssembly.batchTriggerAndWait(filteredEntries)
+        const batchPromise = syncDropboxFileToAssembly.batchTrigger(filteredEntries)
         batchPromises.push(batchPromise)
       }
 
@@ -271,7 +271,7 @@ export const deleteDropboxFileInAssembly = task({
   id: 'delete-dropbox-file-in-assembly',
   queue: {
     name: 'delete-dropbox-file-in-assembly',
-    concurrencyLimit: 5,
+    concurrencyLimit: 1,
   },
   retry: {
     maxAttempts: 3,
@@ -329,7 +329,7 @@ export const initiateAssemblyToDropboxSync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncAssemblyFileToDropbox.batchTriggerAndWait(filteredEntries)
+        const batchPromise = syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
         batchPromises.push(batchPromise)
       }
 
