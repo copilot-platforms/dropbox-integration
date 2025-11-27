@@ -1,9 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 import type { NextRequest } from 'next/server'
-import type { ObjectTypeValue } from '@/db/constants'
+import z from 'zod'
+import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import { channelSync } from '@/db/schema/channelSync.schema'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import APIError from '@/errors/APIError'
+import { AssemblyWebhookRecordService } from '@/features/sync/lib/AssemblyWebhookRecord.service'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type { AssemblyToDropboxSyncFilesPayload } from '@/features/sync/types'
 import {
@@ -35,18 +37,38 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     return webhookEvent.data
   }
 
-  validateHandleableEvent(
+  async checkNonDuplicateWebhookRecord(webhookEvent: AssemblyWebhookEvent) {
+    const payload = {
+      portalId: this.user.portalId,
+      action: z.enum(Object.values(DISPATCHABLE_HANDLEABLE_EVENT)).parse(webhookEvent.eventType),
+      assemblyChannelId: webhookEvent.data.channelId,
+      fileId: webhookEvent.data.id,
+      triggeredAt: webhookEvent.data.createdAt ? new Date(webhookEvent.data.createdAt) : new Date(),
+    }
+    const webhookRecordService = new AssemblyWebhookRecordService(this.user, this.connectionToken)
+    return await webhookRecordService.getOrCreateWebhookRecord(payload)
+  }
+
+  async validateHandleableEvent(
     webhookEvent: AssemblyWebhookEvent,
-  ): DISPATCHABLE_HANDLEABLE_EVENT | null {
+  ): Promise<DISPATCHABLE_HANDLEABLE_EVENT | null> {
     const eventType = webhookEvent.eventType as DISPATCHABLE_HANDLEABLE_EVENT
-    const isValidWebhook = [
-      DISPATCHABLE_HANDLEABLE_EVENT.FileCreated,
-      DISPATCHABLE_HANDLEABLE_EVENT.FileDeleted,
-      DISPATCHABLE_HANDLEABLE_EVENT.FileUpdated,
-      DISPATCHABLE_HANDLEABLE_EVENT.FolderCreated,
-      DISPATCHABLE_HANDLEABLE_EVENT.FolderDeleted,
-      DISPATCHABLE_HANDLEABLE_EVENT.FolderUpdated,
-    ].includes(eventType)
+    let isValidWebhook =
+      [
+        DISPATCHABLE_HANDLEABLE_EVENT.FileCreated,
+        DISPATCHABLE_HANDLEABLE_EVENT.FileDeleted,
+        DISPATCHABLE_HANDLEABLE_EVENT.FileUpdated,
+        DISPATCHABLE_HANDLEABLE_EVENT.FolderCreated,
+        DISPATCHABLE_HANDLEABLE_EVENT.FolderDeleted,
+        DISPATCHABLE_HANDLEABLE_EVENT.FolderUpdated,
+      ].includes(eventType) ||
+      !(webhookEvent.object !== ObjectType.FILE && webhookEvent.object !== ObjectType.FOLDER) // avoid file with object 'link'
+
+    if (isValidWebhook) {
+      const record = await this.checkNonDuplicateWebhookRecord(webhookEvent)
+      isValidWebhook = record.isCreated
+    }
+
     return isValidWebhook ? eventType : null
   }
 

@@ -7,6 +7,7 @@ import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.se
 import { AssemblyWebhookService } from '@/features/webhook/assembly/lib/webhook.service'
 import { DISPATCHABLE_HANDLEABLE_EVENT } from '@/features/webhook/assembly/utils/types'
 import User from '@/lib/copilot/models/User.model'
+import logger from '@/lib/logger'
 
 export const handleWebhookEvent = async (req: NextRequest) => {
   const token = req.nextUrl.searchParams.get('token')
@@ -24,7 +25,9 @@ export const handleWebhookEvent = async (req: NextRequest) => {
     accountId: connection.accountId,
   })
   const webhookEvent = await assemblyWebhookService.parseWebhook(req)
-  const eventType = assemblyWebhookService.validateHandleableEvent(webhookEvent)
+  logger.info(`Event triggered. Type: ${webhookEvent.eventType}`)
+
+  const eventType = await assemblyWebhookService.validateHandleableEvent(webhookEvent)
   if (!eventType) {
     return NextResponse.json({})
   }
