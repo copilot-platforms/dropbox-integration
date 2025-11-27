@@ -1,3 +1,4 @@
+import type { DrizzleError } from 'drizzle-orm'
 import httpStatus from 'http-status'
 import { type NextRequest, NextResponse } from 'next/server'
 import z, { ZodError } from 'zod'
@@ -6,6 +7,12 @@ import type { StatusableError } from '@/errors/BaseServerError'
 import logger from '@/lib/logger'
 
 type RequestHandler = (req: NextRequest, params: unknown) => Promise<NextResponse>
+
+type DrizzleErrorWrapperType = {
+  cause?: {
+    code?: string
+  }
+} & DrizzleError
 
 /**
  * Reusable utility that wraps a given request handler with a global error handler to standardize response structure
@@ -45,6 +52,15 @@ export const withErrorHandler = (handler: RequestHandler): RequestHandler => {
         if (status !== httpStatus.OK) {
           logger.error('APIError:', error.error || error.message)
         }
+      } else if (
+        error instanceof Error &&
+        (error as DrizzleErrorWrapperType)?.cause?.code === '23505' // code 23505 is duplicate key error
+      ) {
+        /**
+         * Handle duplicate assembly webhook record error. If duplicate record exist, simply ignore the event
+         *  */
+        console.info('withErrorHandler. Duplicate webhook record error. Ignoring the event')
+        return NextResponse.json({})
       } else if (error instanceof Error && error.message) {
         message = error.message
         logger.error('Error:', error)

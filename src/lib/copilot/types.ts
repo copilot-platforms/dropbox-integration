@@ -197,6 +197,7 @@ export const CopilotFileRetrieveSchema = z.object({
       name: z.string().optional(),
     })
     .optional(),
+  createdAt: z.string().optional(),
 })
 export type CopilotFileRetrieve = z.infer<typeof CopilotFileRetrieveSchema>
 

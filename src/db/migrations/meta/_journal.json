@@ -36,6 +36,13 @@
       "when": 1763967484277,
       "tag": "20251124065804_add_last_synced_timestamp_in_channel_sync",
       "breakpoints": false
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1764235512660,
+      "tag": "20251127092512_create_assembly_webhook_records_table",
+      "breakpoints": false
     }
   ]
 }
