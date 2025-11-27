@@ -41,8 +41,8 @@ import {
   type WorkspaceResponse,
   WorkspaceResponseSchema,
 } from '@/lib/copilot/types'
-import { withRetry } from '@/lib/copilot/withRetry'
 import logger from '@/lib/logger'
+import { withRetry } from '@/lib/withRetry'
 
 export class CopilotAPI {
   readonly copilot: SDK

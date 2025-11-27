@@ -6,6 +6,10 @@ import type { StatusableError } from '@/errors/BaseServerError'
 export const withRetry = async <Args extends unknown[], R>(
   fn: (...args: Args) => Promise<R>,
   args: Args,
+  opts?: {
+    minTimeout: number
+    maxTimeout: number
+  },
 ): Promise<R> => {
   // TODO: Uncomment after Sentry integration
   // const isEventProcessorRegistered = false
@@ -39,8 +43,8 @@ export const withRetry = async <Args extends unknown[], R>(
 
     {
       retries: 3,
-      minTimeout: 500,
-      maxTimeout: 2000,
+      minTimeout: opts?.minTimeout ?? 500,
+      maxTimeout: opts?.maxTimeout ?? 2000,
       factor: 2, // Exponential factor for timeout delay. Tweak this if issues still persist
 
       onFailedAttempt: (error: { error: unknown; attemptNumber: number; retriesLeft: number }) => {
