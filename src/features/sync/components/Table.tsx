@@ -5,11 +5,11 @@ import TimeAgo from 'react-timeago'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
+import { cn } from '@/components/utils'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
 import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useTable } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
-import { cn } from '@/lib/utils'
 import { generateRandomString } from '@/utils/random'
 
 const MappingTableStatus = ({
