@@ -37,10 +37,13 @@ export const handleWebhookEvent = async (req: NextRequest) => {
       eq(fileFolderSync.assemblyFileId, z.string().parse(webhookEvent.data.id)),
   })
 
+  logger.info('AssemblyWebhookService#handleWebhookEvent :: Existing file', existingFile)
+
   switch (eventType) {
     case DISPATCHABLE_HANDLEABLE_EVENT.FileCreated:
     case DISPATCHABLE_HANDLEABLE_EVENT.FolderCreated:
       if (!existingFile) {
+        logger.info('AssemblyWebhookService#handleWebhookEvent :: File does not exist, creating')
         await assemblyWebhookService.handleFileCreated(webhookEvent)
       }
       break

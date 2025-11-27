@@ -5,6 +5,7 @@ import { ObjectType } from '@/db/constants'
 import APIError from '@/errors/APIError'
 import type { Folder } from '@/features/sync/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
+import logger from '@/lib/logger'
 
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree() {
@@ -25,6 +26,7 @@ export class DropboxService extends AuthenticatedDropboxService {
       entries = entries.concat(dbxResponse.result.entries)
     }
 
+    logger.info('DropboxService#getFolderTree :: Fetched folder tree', entries)
     return this.buildFolderTree(entries)
   }
 
@@ -40,6 +42,7 @@ export class DropboxService extends AuthenticatedDropboxService {
       return node
     }
 
+    logger.info('DropboxService#buildFolderTree :: Building folder tree', entries)
     for (const item of entries) {
       if (item['.tag'] === ObjectType.FOLDER) {
         const parts = item.path_display?.split('/').filter(Boolean)
@@ -57,6 +60,7 @@ export class DropboxService extends AuthenticatedDropboxService {
       }
     }
 
+    logger.info('DropboxService#buildFolderTree :: Built folder tree', root)
     return root
   }
 }

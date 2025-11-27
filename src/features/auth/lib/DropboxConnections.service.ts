@@ -7,6 +7,7 @@ import {
   dropboxConnections,
 } from '@/db/schema/dropboxConnections.schema'
 import BaseService from '@/lib/copilot/services/base.service'
+import logger from '@/lib/logger'
 
 class DropboxConnectionsService extends BaseService {
   async getConnectionForWorkspace(): Promise<DropboxConnection> {
@@ -16,6 +17,10 @@ class DropboxConnectionsService extends BaseService {
       .where(eq(dropboxConnections.portalId, this.user.portalId))
 
     if (!connection) {
+      logger.info(
+        'DropboxConnectionsService#getConnectionForWorkspace :: No connection found for workspace, creating a new one',
+        this.user.internalUserId,
+      )
       const newConnection = await db
         .insert(dropboxConnections)
         .values({
@@ -26,12 +31,21 @@ class DropboxConnectionsService extends BaseService {
       connection = newConnection[0]
     }
 
+    logger.info(
+      'DropboxConnectionsService#getConnectionForWorkspace :: Found connection ',
+      connection.id,
+    )
+
     return connection
   }
 
   async updateConnectionForWorkspace(
     payload: DropboxConnectionUpdatePayload,
   ): Promise<DropboxConnection> {
+    logger.info(
+      'DropboxConnectionsService#updateConnectionForWorkspace :: Updating connection for workspace',
+      this.user.internalUserId,
+    )
     const connections = await db
       .update(dropboxConnections)
       .set(payload)
@@ -41,6 +55,10 @@ class DropboxConnectionsService extends BaseService {
   }
 
   async getActiveConnection(accountId: string) {
+    logger.info(
+      'DropboxConnectionsService#getActiveConnection :: Getting active connection for account',
+      accountId,
+    )
     return await db.query.dropboxConnections.findFirst({
       where: (dropboxConnections, { eq, and }) =>
         and(eq(dropboxConnections.status, true), eq(dropboxConnections.accountId, accountId)),

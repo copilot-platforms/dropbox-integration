@@ -20,6 +20,7 @@ import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
 import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
+import logger from '@/lib/logger'
 import { bidirectionalMasterSync } from '@/trigger/processFileSync'
 import { appendDateTimeToFilePath, buildPathArray, getPathFromRoot } from '@/utils/filePath'
 
@@ -32,6 +33,11 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async calculateTotalFilesCount(assemblyChannelId: string, dbxRootPath: string) {
+    logger.info(
+      'SyncService#calculateTotalFilesCount :: Calculating total files count',
+      assemblyChannelId,
+      dbxRootPath,
+    )
     const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
     const dbxFilesList = dbxClient.filesListFolder({
       path: dbxRootPath,
@@ -51,9 +57,8 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
-    console.info(
-      `SyncService#initiateSync. Channel ID: ${assemblyChannelId}. DBX root path: ${dbxRootPath}`,
-    )
+    logger.info('SyncService#initiateSync :: Initiating sync', assemblyChannelId, dbxRootPath)
+
     await bidirectionalMasterSync.trigger({
       dbxRootPath,
       assemblyChannelId,
@@ -63,7 +68,10 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   async syncDropboxFilesToAssembly({ entry, opts }: DropboxToAssemblySyncFilesPayload) {
-    console.info(`SyncService#syncDropboxFilesToAssembly. Channel ID: ${opts.assemblyChannelId}`)
+    logger.info(
+      'SyncService#syncDropboxFilesToAssembly :: Syncing Dropbox files to Assembly for channel',
+      opts.assemblyChannelId,
+    )
 
     const { dbxRootPath, assemblyChannelId, channelSyncId } = opts
     const fileObjectType = entry['.tag']
@@ -77,6 +85,10 @@ export class SyncService extends AuthenticatedDropboxService {
 
       uploadPromises.push(
         copilotBottleneck.schedule(() => {
+          logger.info(
+            'SyncService#syncDropboxFilesToAssembly :: Syncing Dropbox files to Assembly for channel',
+            opts.assemblyChannelId,
+          )
           return this.createAndUploadFileToAssembly(
             assemblyChannelId,
             itemPath,
@@ -102,7 +114,10 @@ export class SyncService extends AuthenticatedDropboxService {
     entry: DropboxFileListFolderSingleEntry,
     basePath: string,
   ) {
-    console.info(`SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}`)
+    logger.info(
+      'SyncService#createAndUploadFileToAssembly :: Creating and uploading file to Assembly for channel',
+      assemblyChannelId,
+    )
     const copilotApi = new CopilotAPI(this.user.token)
     const tempFileType = lastItem ? fileObjectType : ObjectType.FOLDER
 
@@ -178,6 +193,10 @@ export class SyncService extends AuthenticatedDropboxService {
       channelSyncId,
       getPathFromRoot(entry.path_display, dbxRootPath), // the file path ensures the file to be deleted
     )
+    logger.info(
+      'SyncService#removeFileFromAssembly :: Removing file from Assembly for channel',
+      channelSyncId,
+    )
 
     if (!mappedFile) {
       return
@@ -187,6 +206,10 @@ export class SyncService extends AuthenticatedDropboxService {
       const deleteFileInAssembly = copilotApi.deleteFile(mappedFile.assemblyFileId)
       await Promise.all([deleteMappedFile, deleteFileInAssembly])
     }
+    logger.info(
+      'SyncService#removeFileFromAssembly :: File removed from Assembly for channel',
+      channelSyncId,
+    )
   }
 
   async removeFileFromDropbox(payload: AssemblyToDropboxSyncFilesPayload) {
@@ -202,6 +225,10 @@ export class SyncService extends AuthenticatedDropboxService {
       const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
       await this.mapFilesService.deleteFileMap(mappedFile.id)
       await dbxClient.filesDeleteV2({ path: dbxFilePath })
+      logger.info(
+        'SyncService#removeFileFromDropbox :: File removed from Dropbox for channel',
+        channelSyncId,
+      )
     } catch (error: unknown) {
       if (error instanceof DropboxResponseError) {
         console.info({ err: error.error })
@@ -211,16 +238,23 @@ export class SyncService extends AuthenticatedDropboxService {
     }
   }
   private async uploadFileInAssembly(dbxPath: string, uploadUrl: string, copilotApi: CopilotAPI) {
+    logger.info('SyncService#uploadFileInAssembly :: Uploading file to Assembly', dbxPath)
+
     const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
     const fileMetaData = await dbxFileResponse.filesDownload({ path: dbxPath }) // get metadata for the files
+    logger.info('SyncService#uploadFileInAssembly :: File metadata downloaded', dbxPath)
 
     const downloadBody = await this.dbxApi.downloadFile(DBX_URL_PATH.fileDownload, dbxPath)
+    logger.info('SyncService#uploadFileInAssembly :: Found downloadBody', Boolean(downloadBody))
+
     // upload file to assembly
     const fileUploadResp = await copilotApi.uploadFile(
       uploadUrl,
       fileMetaData.result.size.toString(),
       downloadBody,
     )
+    logger.info('SyncService#uploadFileInAssembly :: File uploaded to Assembly', dbxPath)
+
     if (fileUploadResp.status !== httpStatus.OK) {
       console.error({ error: await fileUploadResp.json() })
       throw new Error('SyncService#uploadFileInAssemnly. Failed to upload file to assembly')
@@ -243,6 +277,15 @@ export class SyncService extends AuthenticatedDropboxService {
         eq(fileFolderSync.channelSyncId, channelSyncId),
         eq(fileFolderSync.itemPath, basePath),
       ) as WhereClause
+      try {
+        logger.info(
+          'SyncService#handleFolderCreatedCase :: Updating dbxFileId',
+          entryId,
+          fileMapCondition.getSQL(),
+        )
+      } catch (e) {
+        logger.info(e)
+      }
 
       // update the dbxFileId to the table
       await this.mapFilesService.updateFileMap(
@@ -285,6 +328,7 @@ export class SyncService extends AuthenticatedDropboxService {
 
     const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
     const dbxFilePath = `${dbxRootPath}/${file.path}`
+    logger.info('SyncService#createAndUploadFileInDropbox :: Found dbxFilePath', dbxFilePath)
 
     // create file/folder
     try {
@@ -294,10 +338,16 @@ export class SyncService extends AuthenticatedDropboxService {
       })
       // 1.1 if folder exists, simply return the folder id
       if (dbxResponse.result['.tag'] === ObjectType.FOLDER) {
+        logger.info('SyncService#createAndUploadFileInDropbox :: Folder exists', dbxFilePath)
         return { dbxFileId: dbxResponse.result.id }
       } else if (dbxResponse.result['.tag'] === ObjectType.FILE) {
         // 1.2 if file exists, rename the existing file in Dropbox and create a new file
         const newFilePath = appendDateTimeToFilePath(dbxFilePath)
+        logger.info(
+          'SyncService#createAndUploadFileInDropbox :: Renaming file',
+          dbxFilePath,
+          newFilePath,
+        )
 
         await dbxClient.filesMoveV2({
           from_path: dbxFilePath,
@@ -316,12 +366,15 @@ export class SyncService extends AuthenticatedDropboxService {
         error.status === 409 &&
         error.error.error.path['.tag'] === 'not_found'
       ) {
+        logger.info("SyncService#createAndUploadFileInDropbox :: File doesn't exist", dbxFilePath)
         if (fileType === ObjectType.FOLDER) {
           const folderCreateResponse = await dbxClient.filesCreateFolderV2({
             path: dbxFilePath,
           })
+          logger.info('SyncService#createAndUploadFileInDropbox :: Folder created', dbxFilePath)
           return { dbxFileId: folderCreateResponse.result.metadata.id }
         } else if (fileType === ObjectType.FILE) {
+          logger.info('SyncService#createAndUploadFileInDropbox :: File created', dbxFilePath)
           return await this.uploadFileInDropbox(file, dbxFilePath)
         }
         console.info(
@@ -334,11 +387,13 @@ export class SyncService extends AuthenticatedDropboxService {
   }
 
   private async uploadFileInDropbox(file: CopilotFileRetrieve, path: string) {
+    logger.info('SyncService#uploadFileInDropbox :: Uploading file to', path)
     if (file.downloadUrl) {
       // download file from Assembly
       const resp = await fetch(file.downloadUrl)
       // upload file to dropbox
       const dbxResponse = await this.dbxApi.uploadFile(DBX_URL_PATH.fileUpload, path, resp.body)
+      logger.info('SyncService#uploadFileInDropbox :: File uploaded to', path)
       return {
         dbxFileId: dbxResponse.id,
         contentHash: dbxResponse.contentHash,
