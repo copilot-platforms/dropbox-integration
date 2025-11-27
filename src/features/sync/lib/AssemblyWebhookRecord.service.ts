@@ -8,12 +8,16 @@ import {
 } from '@/db/schema/assemblyWebhookRecords.schema'
 import APIError from '@/errors/APIError'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
+import logger from '@/lib/logger'
 
 export class AssemblyWebhookRecordService extends AuthenticatedDropboxService {
   async getOrCreateWebhookRecord(
     payload: Omit<WebhookRecordCreateType, 'portalId'>,
   ): Promise<{ item: WebhookRecordSelectType; isCreated: boolean }> {
-    console.info(` \n\n\n triggeredAt: ${new Date(payload.triggeredAt)} \n\n\n`)
+    logger.info(
+      'AssemblyWebhookRecordService#getOrCreateWebhookRecord :: Getting or creating webhook record',
+      payload,
+    )
     let isCreated = false
     let [record] = await db
       .select()
@@ -29,7 +33,9 @@ export class AssemblyWebhookRecordService extends AuthenticatedDropboxService {
       )
 
     if (!record) {
-      console.info(`Webhook event does not exists. Creating ...`)
+      logger.info(
+        'AssemblyWebhookRecordService#getOrCreateWebhookRecord :: Webhook event does not exists. Creating ...',
+      )
       try {
         const [webhookRecord] = await db
           .insert(assemblyWebhookRecord)
@@ -42,6 +48,10 @@ export class AssemblyWebhookRecordService extends AuthenticatedDropboxService {
       }
     }
 
+    logger.info(
+      'AssemblyWebhookRecordService#getOrCreateWebhookRecord :: Returning webhook record',
+      record,
+    )
     return { item: record, isCreated }
   }
 }

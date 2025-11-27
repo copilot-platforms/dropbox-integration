@@ -16,6 +16,7 @@ import {
 import type User from '@/lib/copilot/models/User.model'
 import { type CopilotFileRetrieve, CopilotFileWithObjectSchema } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
+import logger from '@/lib/logger'
 import {
   deleteAssemblyFileInDropbox,
   syncAssemblyFileToDropbox,
@@ -31,6 +32,7 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
 
   async parseWebhook(req: NextRequest): Promise<AssemblyWebhookEvent> {
     const webhookEvent = AssemblyWebhookSchema.safeParse(await req.json())
+    logger.info('AssemblyWebhookService#parseWebhook :: Parsed webhook event', webhookEvent)
     if (!webhookEvent.success) {
       throw new APIError('Failed to parse webhook event')
     }
@@ -73,6 +75,8 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
   }
 
   async handleFileCreated(webhookEvent: AssemblyWebhookEvent) {
+    logger.info('AssemblyWebhookService#handleFileCreated :: Handling file created')
+
     const channel = await this.mapFilesService.getAllChannelMaps(
       and(
         eq(channelSync.assemblyChannelId, webhookEvent.data.channelId),
@@ -82,12 +86,20 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     if (!channel.length) return
 
     const { dbxRootPath, id: channelSyncId } = channel[0]
+    logger.info(
+      'AssemblyWebhookService#handleFileCreated :: Found channel',
+      channel,
+      'syncing to',
+      dbxRootPath,
+    )
+
     const file = webhookEvent.data
     const filteredEntries = await this.mapFilesService.checkAndFilterAssemblyFiles(
       [file],
       dbxRootPath,
       webhookEvent.data.channelId,
     )
+    logger.info('AssemblyWebhookService#handleFileCreated :: Filtered entries', filteredEntries)
 
     if (filteredEntries.length) {
       await syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
@@ -96,6 +108,8 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
   }
 
   async handleFileDeleted(webhookEvent: AssemblyWebhookEvent) {
+    logger.info('AssemblyWebhookService#handleFileDeleted :: Handling file deleted')
+
     const file = webhookEvent.data
     const channel = await this.mapFilesService.getAllChannelMaps(
       and(
@@ -106,6 +120,13 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     if (!channel.length) return
 
     const { dbxRootPath, assemblyChannelId, id: channelSyncId } = channel[0]
+    logger.info(
+      'AssemblyWebhookService#handleFileDeleted :: Found channel',
+      channel,
+      'syncing to',
+      dbxRootPath,
+    )
+
     const user = this.user
     const connectionToken = this.connectionToken
     if (file) {
@@ -126,6 +147,8 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
   }
 
   async handleFileUpdated(webhookEvent: AssemblyWebhookEvent) {
+    logger.info('AssemblyWebhookService#handleFileUpdated :: Handling file updated')
+
     const file = webhookEvent.data
     const channel = await this.mapFilesService.getAllChannelMaps(
       and(
@@ -136,6 +159,13 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     if (!channel.length) return
 
     const { dbxRootPath, assemblyChannelId, id: channelSyncId } = channel[0]
+    logger.info(
+      'AssemblyWebhookService#handleFileUpdated :: Found channel',
+      channel,
+      'syncing to',
+      dbxRootPath,
+    )
+
     const user = this.user
     const connectionToken = this.connectionToken
     if (file) {
@@ -156,6 +186,8 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
   }
 
   private async updateLastSynced(channelSyncId: string) {
+    logger.info('AssemblyWebhookService#updateLastSynced :: Updating last synced timestamp to now')
+
     await this.mapFilesService.updateChannelMapById(
       {
         lastSyncedAt: new Date(),

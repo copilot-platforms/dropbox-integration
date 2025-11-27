@@ -28,16 +28,23 @@ import {
   type UserCompanySelectorInputValue,
 } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
+import logger from '@/lib/logger'
 
 export class MapFilesService extends AuthenticatedDropboxService {
   async getSingleFileMap(where: WhereClause): Promise<FileSyncSelectType | undefined> {
-    return await db.query.fileFolderSync.findFirst({
+    logger.info('MapFilesService#getSingleFileMap :: Getting single file map where', where.getSQL())
+
+    const results = await db.query.fileFolderSync.findFirst({
       where,
     })
+    logger.info('MapFilesService#getSingleFileMap :: Found file map', results)
+    return results
   }
 
   async getAllFileMaps(where: WhereClause): Promise<FileSyncSelectType[]> {
-    return await db.query.fileFolderSync.findMany({
+    logger.info('MapFilesService#getAllFileMaps :: Getting all file maps where', where.getSQL())
+
+    const results = await db.query.fileFolderSync.findMany({
       where: (fileFolderSync, { eq }) =>
         and(
           where,
@@ -45,14 +52,20 @@ export class MapFilesService extends AuthenticatedDropboxService {
           isNull(fileFolderSync.deletedAt),
         ),
     })
+    logger.info('MapFilesService#getAllFileMaps :: Found file maps', results)
+    return results
   }
 
   async insertFileMap(payload: FileSyncCreateType): Promise<FileSyncSelectType> {
+    logger.info('MapFilesService#insertFileMap :: Inserting file map', payload)
+
     const [mappedFile] = await db.insert(fileFolderSync).values(payload).returning()
+    logger.info('MapFilesService#insertFileMap :: Inserted file map', mappedFile)
     return mappedFile
   }
 
   async deleteFileMap(id: string): Promise<void> {
+    logger.info('MapFilesService#deleteFileMap :: Deleting file map for', id)
     await db.delete(fileFolderSync).where(eq(fileFolderSync.id, id))
   }
 
@@ -60,15 +73,26 @@ export class MapFilesService extends AuthenticatedDropboxService {
     payload: FileSyncUpdatePayload,
     condition: WhereClause,
   ): Promise<FileSyncSelectType> {
-    const connections = await db
+    logger.info('MapFilesService#updateFileMap :: Updating file map', payload, condition.getSQL())
+
+    const [connection] = await db
       .update(fileFolderSync)
       .set(payload)
       .where(and(eq(fileFolderSync.portalId, this.user.portalId), condition))
       .returning()
-    return connections[0]
+    logger.info('MapFilesService#updateFileMap :: Updated file map', connection)
+
+    return connection
   }
 
   async getDbxMappedFile(dbxId: string, channelSyncId: string, path: string) {
+    logger.info(
+      'MapFilesService#getDbxMappedFile :: Getting dbx mapped file',
+      dbxId,
+      channelSyncId,
+      path,
+    )
+
     const [mappedFile] = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
@@ -77,10 +101,17 @@ export class MapFilesService extends AuthenticatedDropboxService {
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
+    logger.info('MapFilesService#getDbxMappedFile :: Got dbx mapped file', mappedFile)
     return mappedFile
   }
 
   async getAssemblyMappedFile(assemblyId: string, channelSyncId: string) {
+    logger.info(
+      'MapFilesService#getAssemblyMappedFile :: Getting assembly mapped file',
+      assemblyId,
+      channelSyncId,
+    )
+
     const [mappedFile] = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
@@ -88,10 +119,13 @@ export class MapFilesService extends AuthenticatedDropboxService {
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
+    logger.info('MapFilesService#getAssemblyMappedFile :: Got assembly mapped file', mappedFile)
     return mappedFile
   }
 
   async getDbxMappedFileIds(channelSyncId: string) {
+    logger.info('MapFilesService#getDbxMappedFileIds :: Getting dbx mapped file ids', channelSyncId)
+
     const mappedFile = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
@@ -99,10 +133,18 @@ export class MapFilesService extends AuthenticatedDropboxService {
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
-    return mappedFile.map((file) => file.dbxFileId)
+    const results = mappedFile.map((file) => file.dbxFileId)
+    logger.info('MapFilesService#getDbxMappedFileIds :: Got dbx mapped file ids', results)
+    return results
   }
 
   async getDbxMappedFileFromPath(dbxPath: string, channelSyncId: string) {
+    logger.info(
+      'MapFilesService#getDbxMappedFileFromPath :: Getting dbx mapped file from path',
+      dbxPath,
+      channelSyncId,
+    )
+
     const [mappedFile] = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
@@ -110,10 +152,20 @@ export class MapFilesService extends AuthenticatedDropboxService {
         isNotNull(fileFolderSync.assemblyFileId),
       ) as WhereClause,
     )
+    logger.info(
+      'MapFilesService#getDbxMappedFileFromPath :: Got dbx mapped file from path',
+      mappedFile,
+    )
+
     return mappedFile
   }
 
   async getAssemblyMappedFileIds(channelSyncId: string) {
+    logger.info(
+      'MapFilesService#getAssemblyMappedFileIds :: Getting assembly mapped file ids',
+      channelSyncId,
+    )
+
     const mappedFile = await this.getAllFileMaps(
       and(
         eq(fileFolderSync.channelSyncId, channelSyncId),
@@ -121,12 +173,16 @@ export class MapFilesService extends AuthenticatedDropboxService {
         isNotNull(fileFolderSync.dbxFileId),
       ) as WhereClause,
     )
-    return mappedFile.map((file) => file.assemblyFileId)
+    const results = mappedFile.map((file) => file.assemblyFileId)
+    logger.info('MapFilesService#getAssemblyMappedFileIds :: Got assembly mapped file ids', results)
+    return results
   }
 
   async getOrCreateChannelMap(
     payload: Omit<ChannelSyncCreateType, 'portalId'>,
   ): Promise<ChannelSyncSelectType> {
+    logger.info('MapFilesService#getOrCreateChannelMap :: Getting or creating channel map', payload)
+
     let [channel] = await db
       .select()
       .from(channelSync)
@@ -136,13 +192,14 @@ export class MapFilesService extends AuthenticatedDropboxService {
           eq(channelSync.assemblyChannelId, payload.assemblyChannelId),
         ),
       )
-
+    logger.info('MapFilesService#getOrCreateChannelMap :: Got channel map', channel)
     if (!channel) {
       const newChannel = await db
         .insert(channelSync)
         .values({ ...payload, portalId: this.user.portalId, status: null })
         .returning()
       channel = newChannel[0]
+      logger.info('MapFilesService#getOrCreateChannelMap :: Created channel map', channel)
     }
 
     return channel
@@ -153,7 +210,14 @@ export class MapFilesService extends AuthenticatedDropboxService {
     assemblyChannelId: string,
     dbxRootPath: string,
   ): Promise<ChannelSyncSelectType> {
-    const connections = await db
+    logger.info(
+      'MapFilesService#updateChannelMap :: Updating channel map',
+      payload,
+      assemblyChannelId,
+      dbxRootPath,
+    )
+
+    const [connection] = await db
       .update(channelSync)
       .set(payload)
       .where(
@@ -165,22 +229,32 @@ export class MapFilesService extends AuthenticatedDropboxService {
         ),
       )
       .returning()
-    return connections[0]
+    logger.info('MapFilesService#updateChannelMap :: Updated channel map', connection)
+    return connection
   }
 
   async updateChannelMapById(
     payload: ChannelSyncUpdatePayload,
     id: string,
   ): Promise<ChannelSyncSelectType> {
+    logger.info('MapFilesService#updateChannelMapById :: Updating channel map', payload)
+
     const [connection] = await db
       .update(channelSync)
       .set(payload)
       .where(eq(channelSync.id, id))
       .returning()
+    logger.info('MapFilesService#updateChannelMapById :: Updated channel map', connection)
+
     return connection
   }
 
   async updateChannelMapSyncedFilesCount(id: string) {
+    logger.info(
+      'MapFilesService#updateChannelMapSyncedFilesCount :: Updating channel map synced files count',
+      id,
+    )
+
     await db
       .update(channelSync)
       .set({
@@ -190,6 +264,8 @@ export class MapFilesService extends AuthenticatedDropboxService {
   }
 
   async deleteChannelMapById(id: string) {
+    logger.info('MapFilesService#deleteChannelMapById :: Deleting channel map', id)
+
     await db.transaction(async (tx) => {
       const deletedAt = new Date()
       await tx
@@ -207,13 +283,20 @@ export class MapFilesService extends AuthenticatedDropboxService {
         })
         .where(eq(fileFolderSync.channelSyncId, id))
     })
+
+    logger.info('MapFilesService#deleteChannelMapById :: Deleted channel map', id)
   }
 
   async getAllChannelMaps(where?: WhereClause): Promise<ChannelSyncSelectType[]> {
-    return await db.query.channelSync.findMany({
+    logger.info('MapFilesService#getAllChannelMaps :: Getting all channel maps', where)
+
+    const results = await db.query.channelSync.findMany({
       where: (channelSync, { eq }) =>
         and(where, eq(channelSync.portalId, this.user.portalId), isNull(channelSync.deletedAt)),
     })
+
+    logger.info('MapFilesService#getAllChannelMaps :: Got all channel maps', results)
+    return results
   }
 
   /**
@@ -224,6 +307,13 @@ export class MapFilesService extends AuthenticatedDropboxService {
     dbxRootPath: string,
     assemblyChannelId: string,
   ) {
+    logger.info(
+      'MapFilesService#checkAndFilterDbxFiles :: Checking and filtering Dropbox files',
+      parsedDbxEntries,
+      dbxRootPath,
+      assemblyChannelId,
+    )
+
     const channelMap = await this.getOrCreateChannelMap({
       dbxAccountId: this.connectionToken.accountId,
       assemblyChannelId,
@@ -231,7 +321,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     })
     const fileIds = await this.getDbxMappedFileIds(channelMap.id)
 
-    return parsedDbxEntries
+    const processableEntries = parsedDbxEntries
       .map((entry) => {
         const fileObjectType = entry['.tag']
         if (
@@ -255,6 +345,9 @@ export class MapFilesService extends AuthenticatedDropboxService {
         return null
       })
       .filter((entry) => !!entry)
+
+    logger.info('MapFilesService#checkAndFilterDbxFiles :: Processable entries', processableEntries)
+    return processableEntries
   }
 
   /**
@@ -265,6 +358,13 @@ export class MapFilesService extends AuthenticatedDropboxService {
     dbxRootPath: string,
     assemblyChannelId: string,
   ) {
+    logger.info(
+      'MapFilesService#checkAndFilterAssemblyFiles :: Checking and filtering Assembly files',
+      files,
+      dbxRootPath,
+      assemblyChannelId,
+    )
+
     const channelMap = await this.getOrCreateChannelMap({
       dbxAccountId: this.connectionToken.accountId,
       assemblyChannelId,
@@ -293,7 +393,12 @@ export class MapFilesService extends AuthenticatedDropboxService {
       }
       return null
     })
-    return mappedEntries.filter((entry) => !!entry)
+    const processableEntries = mappedEntries.filter((entry) => !!entry)
+    logger.info(
+      'MapFilesService#checkAndFilterAssemblyFiles :: Processable entries',
+      processableEntries,
+    )
+    return processableEntries
   }
 
   async listFormattedChannelMap(): Promise<MapList[]> {
@@ -312,6 +417,8 @@ export class MapFilesService extends AuthenticatedDropboxService {
   }
 
   async formatChannelMap(channelMap: ChannelSyncSelectType): Promise<MapList | null> {
+    logger.info('MapFilesService#formatChannelMap :: Formatting channel map', channelMap)
+
     try {
       let fileChannelValue: UserCompanySelectorInputValue[]
       const fileChannel = await this.copilot.retrieveFileChannel(channelMap.assemblyChannelId)
@@ -343,7 +450,8 @@ export class MapFilesService extends AuthenticatedDropboxService {
           },
         ]
       }
-      return {
+
+      const formattedChannelInfo = {
         id: channelMap.id,
         fileChannelValue,
         dbxRootPath: channelMap.dbxRootPath,
@@ -351,11 +459,15 @@ export class MapFilesService extends AuthenticatedDropboxService {
         fileChannelId: fileChannel.id,
         lastSyncedAt: channelMap.lastSyncedAt,
       }
+      logger.info('MapFilesService#formatChannelMap :: Formatted channel map', formattedChannelInfo)
+
+      return formattedChannelInfo
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === httpStatus.BAD_REQUEST) {
         console.info('Soft delete channel map and make it inactive')
         await this.deleteChannelMapById(channelMap.id)
       }
+      logger.error('MapFilesService#formatChannelMap :: Error formatting channel map', error)
       return null
     }
   }

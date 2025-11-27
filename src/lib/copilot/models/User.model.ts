@@ -30,6 +30,8 @@ class User {
    * @throws CopilotConnectionError when unable to connect to Copilot API
    */
   static async authenticate(token?: unknown): Promise<User> {
+    logger.info('User#authenticate :: Authenticating user', token)
+
     if (!token) {
       throw new CopilotNoTokenError()
     }

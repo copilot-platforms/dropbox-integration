@@ -6,6 +6,10 @@ import logger from '@/lib/logger'
 
 class AuthService extends BaseService {
   async handleDropboxCallback(urlParams: Record<string, string | string[] | undefined>) {
+    logger.info(
+      'AuthService#handleDropboxCallback :: Handling Dropbox callback',
+      this.user.internalUserId,
+    )
     let tokenSet: DropboxAuthResponseType
     try {
       const dpx = new DropboxApi()
