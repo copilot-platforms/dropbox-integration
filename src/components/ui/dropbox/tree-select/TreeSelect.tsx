@@ -3,7 +3,7 @@
 import { Icon } from 'copilot-design-system'
 import TreeNode from '@/components/ui/dropbox/tree-select/TreeNode'
 import { useTreeSelect } from '@/components/ui/dropbox/useDropbox'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/utils'
 
 // TODO: update css
 

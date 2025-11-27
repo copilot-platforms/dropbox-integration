@@ -9,6 +9,7 @@ import {
   type DropboxFileMetadata,
   DropboxFileMetadataSchema,
 } from '@/lib/dropbox/type'
+import { dropboxArgHeader } from '@/utils/header'
 
 export class DropboxApi {
   private readonly dropboxAuth: DropboxAuth
@@ -85,7 +86,7 @@ export class DropboxApi {
   async downloadFile(urlPath: string, filePath: string) {
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
-      'Dropbox-API-Arg': JSON.stringify({ path: filePath }),
+      'Dropbox-API-Arg': dropboxArgHeader({ path: filePath }),
     }
     const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
     if (response.status !== httpStatus.OK)
@@ -102,13 +103,14 @@ export class DropboxApi {
     filePath: string,
     body: NodeJS.ReadableStream | null,
   ): Promise<DropboxFileMetadata> {
+    const args = {
+      path: filePath,
+      autorename: false,
+      mode: 'add',
+    }
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
-      'Dropbox-API-Arg': JSON.stringify({
-        path: filePath,
-        autorename: false,
-        mode: 'add',
-      }),
+      'Dropbox-API-Arg': dropboxArgHeader(args),
       'Content-Type': 'application/octet-stream',
     }
     const response = await this._manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body)
