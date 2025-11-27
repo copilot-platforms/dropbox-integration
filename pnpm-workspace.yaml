@@ -1,5 +1,7 @@
 onlyBuiltDependencies:
+  - '@sentry/cli'
   - '@tailwindcss/oxide'
   - esbuild
+  - protobufjs
   - sharp
   - supabase
