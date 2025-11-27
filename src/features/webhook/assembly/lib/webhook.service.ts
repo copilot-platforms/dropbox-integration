@@ -51,11 +51,11 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     return await webhookRecordService.getOrCreateWebhookRecord(payload)
   }
 
-  async validateHandleableEvent(
+  validateHandleableEvent(
     webhookEvent: AssemblyWebhookEvent,
-  ): Promise<DISPATCHABLE_HANDLEABLE_EVENT | null> {
+  ): DISPATCHABLE_HANDLEABLE_EVENT | null {
     const eventType = webhookEvent.eventType as DISPATCHABLE_HANDLEABLE_EVENT
-    let isValidWebhook =
+    const isValidWebhook =
       [
         DISPATCHABLE_HANDLEABLE_EVENT.FileCreated,
         DISPATCHABLE_HANDLEABLE_EVENT.FileDeleted,
@@ -66,10 +66,10 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
       ].includes(eventType) ||
       !(webhookEvent.object !== ObjectType.FILE && webhookEvent.object !== ObjectType.FOLDER) // avoid file with object 'link'
 
-    if (isValidWebhook) {
-      const record = await this.checkNonDuplicateWebhookRecord(webhookEvent)
-      isValidWebhook = record.isCreated
-    }
+    // if (isValidWebhook) {
+    //   const record = await this.checkNonDuplicateWebhookRecord(webhookEvent)
+    //   isValidWebhook = record.isCreated
+    // }
 
     return isValidWebhook ? eventType : null
   }
