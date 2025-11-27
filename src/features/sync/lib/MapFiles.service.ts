@@ -288,7 +288,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
   }
 
   async getAllChannelMaps(where?: WhereClause): Promise<ChannelSyncSelectType[]> {
-    logger.info('MapFilesService#getAllChannelMaps :: Getting all channel maps', where)
+    logger.info('MapFilesService#getAllChannelMaps :: Getting all channel maps', where?.getSQL())
 
     const results = await db.query.channelSync.findMany({
       where: (channelSync, { eq }) =>
