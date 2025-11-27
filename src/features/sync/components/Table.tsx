@@ -56,7 +56,7 @@ const MappingTableRow = () => {
 
   return (
     <>
-      {tempMapList.length &&
+      {!!tempMapList.length &&
         tempMapList.map((mapItem, index) => (
           <tr key={`${generateRandomString(8)}-${index}`}>
             <td className="w-80 whitespace-nowrap px-6 py-2">
