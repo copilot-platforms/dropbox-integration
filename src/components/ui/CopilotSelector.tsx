@@ -30,7 +30,7 @@ export const CopilotSelector = ({
           grouped={true}
           limitSelectedOptions={1}
           onChange={onChange}
-          className={`py-0 text-sm ${disabled ? 'opacity-65' : ''}`}
+          className={`py-0 text-sm ${disabled ? 'opacity-75' : ''}`}
           isDisabled={disabled}
         />
       </div>
