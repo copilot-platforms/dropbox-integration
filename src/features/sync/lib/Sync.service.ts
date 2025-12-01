@@ -46,8 +46,9 @@ export class SyncService extends AuthenticatedDropboxService {
     })
     const assemblyFilesList = this.user.copilot.listFiles(assemblyChannelId)
     const [dbxFiles, assemblyFiles] = await Promise.all([dbxFilesList, assemblyFilesList])
+    const filteredAssemblyFiles = assemblyFiles.data.filter((file) => file.status !== 'pending')
 
-    const totalFilesCount = dbxFiles.result.entries.length + assemblyFiles.data.length - 1 // Note: subtract 1 to exclude the dbx root folder
+    const totalFilesCount = dbxFiles.result.entries.length + filteredAssemblyFiles.length - 1 // Note: subtract 1 to exclude the dbx root folder
     await this.mapFilesService.getOrCreateChannelMap({
       totalFilesCount,
       assemblyChannelId,
