@@ -67,6 +67,7 @@ const MappingTableRow = () => {
                   mapItem.fileChannelValue?.[0],
                 )}
                 onChange={(val) => onUserSelectorValueChange(val, index)}
+                disabled={!!mapItem.status}
               />
             </td>
             <td className="w-96 whitespace-nowrap px-6 py-2">
@@ -75,6 +76,7 @@ const MappingTableRow = () => {
                 onChange={(val) => onDropboxFolderChange(val, index)}
                 options={folderTree}
                 placeholder="Search Dropbox folder"
+                disabled={!!mapItem.status}
               />
             </td>
             <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">

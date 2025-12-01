@@ -7,9 +7,15 @@ type CopilotSelectorProps = {
   name: string
   initialValue?: SelectorValue[]
   onChange: (val: UserCompanySelectorInputValue[]) => void
+  disabled?: boolean
 }
 
-export const CopilotSelector = ({ name, initialValue, onChange }: CopilotSelectorProps) => {
+export const CopilotSelector = ({
+  name,
+  initialValue,
+  onChange,
+  disabled,
+}: CopilotSelectorProps) => {
   const { userChannelList } = useUserChannel()
 
   if (typeof window !== 'undefined')
@@ -24,7 +30,8 @@ export const CopilotSelector = ({ name, initialValue, onChange }: CopilotSelecto
           grouped={true}
           limitSelectedOptions={1}
           onChange={onChange}
-          className="py-0 text-sm"
+          className={`py-0 text-sm ${disabled ? 'opacity-65' : ''}`}
+          isDisabled={disabled}
         />
       </div>
     )
