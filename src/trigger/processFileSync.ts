@@ -82,9 +82,6 @@ export const initiateDropboxToAssemblySync = task({
       limit: MAX_FILES_LIMIT,
     })
 
-    // biome-ignore lint/suspicious/noExplicitAny: just for awaiting purpose so its safe to ignore
-    const batchPromises: Promise<any>[] = []
-
     // 2. loop over the dropbox files
     while (dbxFiles.result.entries.length) {
       const parsedDbxFiles = DropboxFileListFolderResultEntriesSchema.safeParse(
@@ -105,8 +102,7 @@ export const initiateDropboxToAssemblySync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncDropboxFileToAssembly.batchTrigger(filteredEntries)
-        batchPromises.push(batchPromise)
+        await syncDropboxFileToAssembly.batchTriggerAndWait(filteredEntries)
       }
 
       if (!dbxFiles.result.has_more) {
@@ -127,11 +123,6 @@ export const initiateDropboxToAssemblySync = task({
       })
     }
 
-    /**
-     * 3. await all the batch promises.
-     * This is required to ensure that all the files are synced before indicating the sync is complete
-     * */
-    await Promise.all(batchPromises)
     await mapFilesService.updateChannelMap(
       {
         status: true,
@@ -145,9 +136,10 @@ export const initiateDropboxToAssemblySync = task({
 
 export const syncDropboxFileToAssembly = task({
   id: 'sync-dropbox-file-to-assembly',
+  machine: 'micro',
   queue: {
     name: 'sync-dropbox-file-to-assembly',
-    concurrencyLimit: 5,
+    concurrencyLimit: 25,
   },
   retry: {
     maxAttempts: 3,
@@ -316,9 +308,6 @@ export const initiateAssemblyToDropboxSync = task({
     const copilotApi = new CopilotAPI(payload.user.token)
     let files = await copilotApi.listFiles(payload.assemblyChannelId)
 
-    // biome-ignore lint/suspicious/noExplicitAny: just for awaiting purpose so its safe to ignore
-    const batchPromises: Promise<any>[] = []
-
     while (files.data.length) {
       // 2. check and filter out all the mapped files
       const filteredEntries = await mapFilesService.checkAndFilterAssemblyFiles(
@@ -328,8 +317,7 @@ export const initiateAssemblyToDropboxSync = task({
       )
 
       if (filteredEntries.length) {
-        const batchPromise = syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
-        batchPromises.push(batchPromise)
+        await syncAssemblyFileToDropbox.batchTriggerAndWait(filteredEntries)
       }
 
       if (!files.nextToken) {
@@ -338,19 +326,15 @@ export const initiateAssemblyToDropboxSync = task({
 
       files = await copilotApi.listFiles(payload.assemblyChannelId, files.nextToken)
     }
-    /**
-     * 3. await all the batch promises.
-     * This is required to ensure that all the files are synced to Dropbox first before syncing dropbox to assembly
-     * */
-    await Promise.all(batchPromises)
   },
 })
 
 export const syncAssemblyFileToDropbox = task({
   id: 'sync-assembly-file-to-dropbox',
+  machine: 'micro',
   queue: {
     name: 'sync-assembly-file-to-dropbox',
-    concurrencyLimit: 5,
+    concurrencyLimit: 25,
   },
   retry: {
     maxAttempts: 3,
