@@ -5,7 +5,7 @@ import type { Folder } from '../types'
 export const useFolder = () => {
   const { user } = useAuthContext()
   const [folderTree, setFolderTree] = useState<Folder[]>([])
-  const [isFolderTreeLoading, setIsFolderTreeLoading] = useState(false)
+  const [isFolderTreeLoading, setIsFolderTreeLoading] = useState(true)
 
   const getPathOptions = useCallback(async () => {
     setIsFolderTreeLoading(true)
