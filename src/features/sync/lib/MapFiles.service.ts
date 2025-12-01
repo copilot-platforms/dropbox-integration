@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import httpStatus from 'http-status'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import z from 'zod'
@@ -293,6 +293,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
     const results = await db.query.channelSync.findMany({
       where: (channelSync, { eq }) =>
         and(where, eq(channelSync.portalId, this.user.portalId), isNull(channelSync.deletedAt)),
+      orderBy: [asc(channelSync.createdAt)],
     })
 
     logger.info('MapFilesService#getAllChannelMaps :: Got all channel maps', results)
