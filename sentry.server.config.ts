@@ -23,7 +23,10 @@ Sentry.init({
   // spotlight: process.env.NODE_ENV === 'development',
   ignoreErrors: [/fetch failed/i],
   beforeSend(event) {
-    if (event.request?.headers?.['user-agent']?.includes('vercel')) {
+    if (
+      event.request?.headers?.['user-agent']?.includes('vercel') ||
+      event.request?.headers?.['X-Vercel-Firewall-Bypass']
+    ) {
       return null
     }
     return event

@@ -56,7 +56,10 @@ export default defineConfig({
       // Update this to match the environment you want to track errors for
       environment: vercelEnv,
       beforeSend(event) {
-        if (event.request?.headers?.['user-agent']?.includes('vercel')) {
+        if (
+          event.request?.headers?.['user-agent']?.includes('vercel') ||
+          event.request?.headers?.['X-Vercel-Firewall-Bypass']
+        ) {
           return null
         }
         return event
