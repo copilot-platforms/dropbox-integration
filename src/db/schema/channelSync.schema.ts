@@ -22,6 +22,7 @@ export const channelSync = pgTable(
     dbxAccountId: varchar({ length: 100 }).notNull(),
     assemblyChannelId: varchar({ length: 255 }).notNull(), // Assembly channel ID
     dbxRootPath: varchar().notNull(),
+    dbxRootId: varchar(),
     dbxCursor: varchar(),
     status: boolean().default(false), // Connection status
     // totalFilesCount and syncedFilesCount columns helps to calculate the progress of sync

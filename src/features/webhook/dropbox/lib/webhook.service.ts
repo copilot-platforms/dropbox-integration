@@ -1,5 +1,8 @@
 import { and, eq } from 'drizzle-orm'
+import { type Dropbox, DropboxResponseError } from 'dropbox'
 import status from 'http-status'
+import httpStatus from 'http-status'
+import z from 'zod'
 import env from '@/config/server.env'
 import db from '@/db'
 import { type ChannelSyncSelectType, channelSync } from '@/db/schema/channelSync.schema'
@@ -11,6 +14,7 @@ import { getDropboxChanges } from '@/features/webhook/dropbox/utils/getDropboxCh
 import { generateToken } from '@/lib/copilot/generateToken'
 import User from '@/lib/copilot/models/User.model'
 import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import logger from '@/lib/logger'
 import { handleChannelFileChanges } from '@/trigger/processFileSync'
 
 export class DropboxWebhook {
@@ -40,9 +44,52 @@ export class DropboxWebhook {
     )
 
     const dbxApi = new DropboxApi()
-
+    const dbxClient = dbxApi.getDropboxClient(connectionToken.refreshToken)
     for (const channel of channels) {
-      await this.processChannelChanges(channel, dbxApi, mapFilesService, user, connectionToken)
+      const proceed = await this.handleDbxRootPathMove(channel, mapFilesService, dbxClient)
+      proceed &&
+        (await this.processChannelChanges(channel, dbxApi, mapFilesService, user, connectionToken))
+    }
+  }
+
+  async getDropboxFileMetadata(filePath: string, dbxClient: Dropbox) {
+    return await dbxClient.filesGetMetadata({
+      path: filePath,
+    })
+  }
+
+  async handleDbxRootPathMove(
+    channel: ChannelSyncSelectType,
+    mapFilesService: MapFilesService,
+    dbxClient: Dropbox,
+  ): Promise<boolean> {
+    try {
+      const response = await this.getDropboxFileMetadata(channel.dbxRootPath, dbxClient)
+      if (response.result) return true
+      throw new APIError('Root path not found', httpStatus.NOT_FOUND)
+    } catch (error: unknown) {
+      logger.error(
+        'WebhookService#handleDbxRootPathMove :: Error handling dbx root path move',
+        error,
+      )
+      if (error instanceof DropboxResponseError && error.status === 409) {
+        console.info(
+          'WebhookService#handleDbxRootPathMove :: Root path not found',
+          channel.dbxRootPath,
+        )
+        const response = await this.getDropboxFileMetadata(
+          z.string().parse(channel.dbxRootId),
+          dbxClient,
+        )
+        await mapFilesService.updateChannelMapById(
+          {
+            dbxRootPath: response.result.path_display,
+          },
+          channel.id,
+        )
+        return false
+      }
+      throw error
     }
   }
 
