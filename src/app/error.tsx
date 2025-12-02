@@ -1,25 +1,47 @@
 'use client'
 
+import { Button } from 'copilot-design-system'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SilentError } from '@/components/layouts/SilentError'
+import Linkify from 'react-linkify'
 import { authInitUrl } from '@/features/auth/components/Callout'
 
-export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+export default function ClientErrorBoundary({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const isAuthError = searchParams.get('error') === 'access_denied'
 
   const handleAuthReset = () => {
-    router.push(authInitUrl + searchParams.get('state')) // token is set in state
+    const token = searchParams.get('state')
+    if (token) {
+      router.push(authInitUrl + token) // token is set in state
+      return
+    }
+    console.error('Token is not available')
   }
 
   return (
-    <div className="flex items-center justify-center px-2 py-4">
-      <SilentError
-        message={error.message || 'Something went wrong'}
-        resetFn={isAuthError ? handleAuthReset : reset}
-      />
-    </div>
+    <main>
+      <div className="flex flex-col items-center justify-center pt-52 pb-4">
+        <p className="mb-2 [&>a:hover]:underline [&>a]:block">
+          <Linkify
+            componentDecorator={(decoratedHref, decoratedText, key) => (
+              <a target="_blank" rel="noopener noreferrer" href={decoratedHref} key={key}>
+                {decoratedText}
+              </a>
+            )}
+          >
+            {error.message}.
+          </Linkify>
+        </p>
+        <Button label="Try again" onClick={isAuthError ? handleAuthReset : reset} />
+      </div>
+    </main>
   )
 }
