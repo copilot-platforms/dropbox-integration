@@ -5,7 +5,10 @@
 import * as Sentry from '@sentry/nextjs'
 import z from 'zod'
 
-const dsn = z.string().min(1).parse(process.env.NEXT_PUBLIC_SENTRY_DSN)
+const dsn =
+  process.env.VERCEL_ENV === 'production'
+    ? z.string().min(1).parse(process.env.NEXT_PUBLIC_SENTRY_DSN)
+    : ''
 
 Sentry.init({
   dsn,

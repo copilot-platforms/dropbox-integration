@@ -7,11 +7,13 @@ import z from 'zod'
 
 dotenv.config()
 
+const vercelEnv = process.env.VERCEL_ENV
+const isProd = vercelEnv === 'production'
 const project = z.string().min(1).parse(process.env.TRIGGER_PROJECT_ID)
-const org = z.string().min(1).parse(process.env.SENTRY_ORG)
-const sentryProject = z.string().min(1).parse(process.env.SENTRY_PROJECT)
-const sentryAuthToken = z.string().min(1).parse(process.env.SENTRY_AUTH_TOKEN)
-const dsn = z.string().min(1).parse(process.env.NEXT_PUBLIC_SENTRY_DSN)
+const org = isProd ? z.string().min(1).parse(process.env.SENTRY_ORG) : ''
+const sentryProject = isProd ? z.string().min(1).parse(process.env.SENTRY_PROJECT) : ''
+const sentryAuthToken = isProd ? z.string().min(1).parse(process.env.SENTRY_AUTH_TOKEN) : ''
+const dsn = isProd ? z.string().min(1).parse(process.env.NEXT_PUBLIC_SENTRY_DSN) : ''
 
 export default defineConfig({
   project,
@@ -52,8 +54,7 @@ export default defineConfig({
       // The Data Source Name (DSN) is a unique identifier for your Sentry project.
       dsn,
       // Update this to match the environment you want to track errors for
-      // TODO: check for VERCEL_ENV
-      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+      environment: vercelEnv,
     })
   },
   onFailure: ({ payload, error, ctx }) => {

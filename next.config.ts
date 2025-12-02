@@ -31,9 +31,11 @@ const nextConfig = {
   },
 } satisfies NextConfig
 
-const org = z.string().min(1).parse(process.env.SENTRY_ORG)
-const project = z.string().min(1).parse(process.env.SENTRY_PROJECT)
-const authToken = z.string().min(1).parse(process.env.SENTRY_AUTH_TOKEN)
+const isProduction = process.env.VERCEL_ENV === 'production'
+
+const org = isProduction ? z.string().min(1).parse(process.env.SENTRY_ORG) : ''
+const project = isProduction ? z.string().min(1).parse(process.env.SENTRY_PROJECT) : ''
+const authToken = isProduction ? z.string().min(1).parse(process.env.SENTRY_AUTH_TOKEN) : ''
 
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
