@@ -43,6 +43,13 @@
       "when": 1764235512660,
       "tag": "20251127092512_create_assembly_webhook_records_table",
       "breakpoints": false
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764679263706,
+      "tag": "20251202124103_add_dropbox_root_id_column",
+      "breakpoints": false
     }
   ]
 }

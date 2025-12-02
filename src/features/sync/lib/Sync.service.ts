@@ -7,6 +7,7 @@ import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
+import APIError from '@/errors/APIError'
 import { DBX_URL_PATH } from '@/features/sync/constant'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type {
@@ -56,8 +57,32 @@ export class SyncService extends AuthenticatedDropboxService {
     })
   }
 
+  private async handleChannelMap(assemblyChannelId: string, dbxRootPath: string) {
+    logger.info(
+      `SyncService#handleChannelMap :: handling channel map for channel ${assemblyChannelId} and root path ${dbxRootPath}`,
+    )
+    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxResponse = await dbxClient.filesGetMetadata({
+      path: dbxRootPath,
+    })
+
+    if (dbxResponse.result['.tag'] !== ObjectType.FOLDER)
+      throw new APIError('Invalid root path', httpStatus.BAD_REQUEST)
+
+    await this.mapFilesService.updateChannelMap(
+      {
+        dbxRootId: dbxResponse.result.id,
+      },
+      assemblyChannelId,
+      dbxRootPath,
+    )
+  }
+
   async initiateSync(assemblyChannelId: string, dbxRootPath: string) {
     logger.info('SyncService#initiateSync :: Initiating sync', assemblyChannelId, dbxRootPath)
+
+    // handle channel map and create channel with dbxRootPath and Id
+    await this.handleChannelMap(assemblyChannelId, dbxRootPath)
 
     await bidirectionalMasterSync.trigger({
       dbxRootPath,
