@@ -36,6 +36,12 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
 
   ignoreErrors: [/fetch failed/i],
+  beforeSend(event) {
+    if (event.request?.headers?.['user-agent']?.includes('vercel')) {
+      return null
+    }
+    return event
+  },
 })
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart

@@ -22,4 +22,10 @@ Sentry.init({
   // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: process.env.NODE_ENV === 'development',
   ignoreErrors: [/fetch failed/i],
+  beforeSend(event) {
+    if (event.request?.headers?.['user-agent']?.includes('vercel')) {
+      return null
+    }
+    return event
+  },
 })

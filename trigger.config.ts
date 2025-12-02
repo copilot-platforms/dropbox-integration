@@ -55,6 +55,12 @@ export default defineConfig({
       dsn,
       // Update this to match the environment you want to track errors for
       environment: vercelEnv,
+      beforeSend(event) {
+        if (event.request?.headers?.['user-agent']?.includes('vercel')) {
+          return null
+        }
+        return event
+      },
     })
   },
   onFailure: ({ payload, error, ctx }) => {
