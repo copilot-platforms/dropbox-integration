@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import ClientErrorBoundary from '@/app/(home)/error'
+import ClientErrorBoundary from '@/app/error'
 
 interface SilentErrorProps {
   message: string
