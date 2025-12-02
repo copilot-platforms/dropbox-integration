@@ -81,9 +81,13 @@ export class DropboxWebhook {
           z.string().parse(channel.dbxRootId),
           dbxClient,
         )
+        const filesData = await dbxClient.filesListFolder({
+          path: z.string().parse(response.result.path_display),
+        })
         await mapFilesService.updateChannelMapById(
           {
             dbxRootPath: response.result.path_display,
+            dbxCursor: filesData.result.cursor,
           },
           channel.id,
         )
@@ -100,7 +104,9 @@ export class DropboxWebhook {
     user: User,
     connectionToken: DropboxConnectionTokens,
   ) {
-    console.info(`webhookService#processChannelChanges. ChannelId: ${channel.id}`)
+    console.info(
+      `webhookService#processChannelChanges. ChannelId: ${channel.id} ${JSON.stringify(channel)}`,
+    )
     const { id: channelSyncId, dbxRootPath, assemblyChannelId, dbxCursor } = channel
     let hasMore = true
     let currentCursor = dbxCursor ?? ''
