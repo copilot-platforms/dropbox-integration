@@ -1,8 +1,8 @@
+import httpStatus from 'http-status'
 import { z } from 'zod'
+import APIError from '@/errors/APIError'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import CopilotConnectionError from '@/lib/copilot/errors/CopilotConnectionError'
-import CopilotInvalidTokenError from '@/lib/copilot/errors/CopilotInvalidTokenError'
-import CopilotNoTokenError from '@/lib/copilot/errors/CopilotNoTokenError'
 import type { Token } from '@/lib/copilot/types'
 import logger from '@/lib/logger'
 
@@ -25,22 +25,20 @@ class User {
    * Authenticates a Copilot user by token
    * @param token
    * @returns User instance modeled from the token payload
-   * @throws CopilotNoTokenError when no token is provided
-   * @throws CopilotInvalidTokenError when the token is invalid
    * @throws CopilotConnectionError when unable to connect to Copilot API
    */
   static async authenticate(token?: unknown): Promise<User> {
     logger.info('User#authenticate :: Authenticating user', token)
 
     if (!token) {
-      throw new CopilotNoTokenError()
+      throw new APIError('Please provide a valid token', httpStatus.UNAUTHORIZED)
     }
 
     const tokenParsed = z.string().min(1).safeParse(token)
 
     if (!tokenParsed.success) {
       logger.info('User#authenticate :: Token parse error', tokenParsed.error)
-      throw new CopilotInvalidTokenError()
+      throw new APIError('Token parse error', httpStatus.UNAUTHORIZED)
     }
 
     let copilot: CopilotAPI
@@ -48,7 +46,10 @@ class User {
       copilot = new CopilotAPI(tokenParsed.data)
     } catch (err) {
       if (err instanceof Error && err.message.includes('Unable to authorize Copilot SDK')) {
-        throw new CopilotInvalidTokenError('Unable to authorize Copilot with provided token')
+        throw new APIError(
+          'Unable to authorize Copilot with provided token',
+          httpStatus.UNAUTHORIZED,
+        )
       }
       logger.error('User#authenticate :: Error while initializing Copilot client', err)
       throw new CopilotConnectionError()
@@ -56,7 +57,7 @@ class User {
 
     const tokenPayload = await copilot.getTokenPayload()
     if (!tokenPayload) {
-      throw new CopilotInvalidTokenError('Unable to decode Copilot token payload')
+      throw new APIError('Unable to decode Copilot token payload', httpStatus.UNAUTHORIZED)
     }
 
     return new User(tokenParsed.data, tokenPayload, copilot)
