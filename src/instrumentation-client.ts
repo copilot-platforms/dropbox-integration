@@ -39,7 +39,7 @@ Sentry.init({
   beforeSend(event) {
     if (
       event.request?.headers?.['user-agent']?.includes('vercel') ||
-      event.request?.headers?.['X-Vercel-Firewall-Bypass']
+      event.request?.headers?.['x-vercel-firewall-bypass']
     ) {
       return null
     }
