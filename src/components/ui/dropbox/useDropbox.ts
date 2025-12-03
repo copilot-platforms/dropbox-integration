@@ -9,7 +9,7 @@ type UseTreeSelectProps = {
 
 export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [filterValue, setFilterValue] = useState('')
+  const [filterValue, setFilterValue] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -19,6 +19,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+        setFilterValue(null)
       }
     }
 
@@ -59,7 +60,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
   const handleNodeSelect = (node: TreeSelectNode) => {
     onChange(node.path)
     setIsOpen(false)
-    setFilterValue('')
+    setFilterValue(null)
   }
 
   const flattenTree = (nodes: TreeSelectNode[]): TreeSelectNode[] => {
@@ -76,7 +77,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     return flattenedNodes
   }
 
-  const filterNodes = (nodes: TreeSelectNode[], query: string): TreeSelectNode[] => {
+  const filterNodes = (nodes: TreeSelectNode[], query: string | null): TreeSelectNode[] => {
     if (!query) return nodes
     const flatTree = flattenTree(nodes)
 
