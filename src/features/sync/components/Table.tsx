@@ -1,11 +1,11 @@
 'use client'
 
 import { IconButton, Tooltip } from 'copilot-design-system'
-import TimeAgo from 'react-timeago'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/components/utils'
+import LastSyncAt from '@/features/sync/components/LastSyncedAt'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
 import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useTable } from '@/features/sync/hooks/useTable'
@@ -81,7 +81,7 @@ const MappingTableRow = () => {
             </td>
             <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
               {mapItem.status && mapItem.lastSyncedAt ? (
-                <TimeAgo date={mapItem.lastSyncedAt} />
+                <LastSyncAt date={mapItem.lastSyncedAt} />
               ) : (
                 '-'
               )}
