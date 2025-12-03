@@ -55,10 +55,11 @@ export default function TreeSelect({
           value={filterValue}
           onChange={(e) => setFilterValue(e.target.value)}
           className={cn(
-            'w-full rounded-md border px-3 py-2 text-left text-sm',
-            'border-input transition-colors hover:border-ring',
+            'w-full rounded-sm border px-3 py-2 text-left text-sm',
+            'border-input-border transition-colors hover:border-ring',
             'focus:outline-none focus:ring-1 focus:ring-ring',
-            'border-gray-300 disabled:opacity-50',
+            'placeholder-text-secondary disabled:opacity-50',
+            'border-ring ring-1 ring-ring/50',
           )}
         />
       ) : (
@@ -68,37 +69,33 @@ export default function TreeSelect({
           onKeyDown={() => !disabled && setIsOpen(!isOpen)}
           className={cn(
             'w-full rounded-sm border bg-background px-3 py-2 text-left text-sm',
-            'border-input transition-colors hover:border-ring',
+            'border-input border-input-border transition-colors',
             'flex items-center justify-between',
-            'cursor-pointer border-gray-300 disabled:opacity-50',
-            isOpen && 'border-ring ring-1 ring-ring/50',
+            'cursor-pointer placeholder-text-secondary disabled:opacity-50',
             disabled && 'pointer-events-none opacity-65',
           )}
         >
           {selectedLabel && <Icon icon="Files" width={16} height={16} className="me-2" />}
-          <span className={cn('flex-1 truncate', !selectedLabel && 'text-gray-500')}>
+          <span
+            className={cn(
+              'flex-1 truncate',
+              !selectedLabel && 'text-[var(--color-text-secondary)]',
+            )}
+          >
             {selectedLabel || placeholder}
           </span>
-          <div className="flex items-center gap-2">
-            {selectedLabel && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onChange(null)
-                }}
-                className="cursor-pointer transition-opacity hover:opacity-70"
-              >
-                <Icon icon="Close" width={16} height={16} />
-              </button>
-            )}
-            <Icon
-              icon="ChevronDown"
-              width={16}
-              height={16}
-              className={cn('transition-transform', isOpen && 'rotate-180')}
-            />
-          </div>
+          {selectedLabel && !disabled && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange(null)
+              }}
+              className="cursor-pointer transition-opacity hover:opacity-70"
+            >
+              <Icon icon="Close" width={16} height={16} />
+            </button>
+          )}
         </div>
       )}
 

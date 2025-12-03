@@ -112,7 +112,7 @@ const MappingTableRow = () => {
                 </Tooltip>
               ) : (
                 <div className="flex items-center gap-3">
-                  {mapItem.dbxRootPath && mapItem.fileChannelValue.length && (
+                  {mapItem.dbxRootPath && !!mapItem.fileChannelValue.length && (
                     <Tooltip
                       content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
                       position="bottom"
