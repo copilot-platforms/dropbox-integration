@@ -23,6 +23,30 @@ interface TreeSelectProps {
   className?: string
 }
 
+function CloseIconComponent({ onChange }: { onChange: (val: string | null) => void }) {
+  return (
+    <div className="absolute inset-y-0 right-3 flex items-center">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onChange(null)
+        }}
+        className="cursor-pointer"
+      >
+        <div className="bg-white p-1">
+          <Icon
+            icon="Close"
+            width={16}
+            height={16}
+            className="transition-opacity hover:opacity-70"
+          />
+        </div>
+      </button>
+    </div>
+  )
+}
+
 export default function TreeSelect({
   value,
   onChange,
@@ -45,23 +69,27 @@ export default function TreeSelect({
     expandedPaths,
   } = useTreeSelect({ options, value, onChange })
 
+  const searchFilterValue = filterValue === null ? selectedLabel || '' : filterValue
+
   return (
     <div ref={containerRef} className={cn('relative w-80', className)}>
       {isOpen ? (
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={placeholder}
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          className={cn(
-            'w-full rounded-sm border px-3 py-2 text-left text-sm',
-            'border-input-border transition-colors hover:border-ring',
-            'focus:outline-none focus:ring-1 focus:ring-ring',
-            'placeholder-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
-            'border-ring ring-1 ring-ring/50',
-          )}
-        />
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={placeholder}
+            value={searchFilterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
+            className={cn(
+              'w-full rounded-sm border px-3 py-2 text-left text-sm',
+              'border-input-border transition-colors hover:border-ring',
+              'focus:outline-none focus:ring-1 focus:ring-ring',
+              'placeholder-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+          />
+          {searchFilterValue && <CloseIconComponent onChange={onChange} />}
+        </div>
       ) : (
         // biome-ignore lint/a11y/noStaticElementInteractions: allow interation for this div
         <div
@@ -71,7 +99,7 @@ export default function TreeSelect({
             'w-full rounded-sm border bg-background px-3 py-2 text-left text-sm',
             'border-input border-input-border transition-colors',
             'flex items-center justify-between',
-            'cursor-pointer placeholder-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
+            'relative cursor-pointer placeholder-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
           )}
         >
           {selectedLabel && <Icon icon="Files" width={16} height={16} className="me-2" />}
@@ -83,18 +111,7 @@ export default function TreeSelect({
           >
             {selectedLabel || placeholder}
           </span>
-          {selectedLabel && !disabled && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange(null)
-              }}
-              className="cursor-pointer transition-opacity hover:opacity-70"
-            >
-              <Icon icon="Close" width={16} height={16} />
-            </button>
-          )}
+          {selectedLabel && !disabled && <CloseIconComponent onChange={onChange} />}
         </div>
       )}
 
