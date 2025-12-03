@@ -64,6 +64,9 @@ export class DropboxWebhook {
     dbxClient: Dropbox,
   ): Promise<boolean> {
     try {
+      console.info(
+        `WebhookService#handleDbxRootPathMove. Root path: ${channel.dbxRootPath}. Assembly file channel ID: ${channel.assemblyChannelId} Checking if the root path exists...`,
+      )
       const response = await this.getDropboxFileMetadata(channel.dbxRootPath, dbxClient)
       if (response.result) return true
       throw new APIError('Root path not found', httpStatus.NOT_FOUND)
@@ -81,13 +84,14 @@ export class DropboxWebhook {
           z.string().parse(channel.dbxRootId),
           dbxClient,
         )
-        const filesData = await dbxClient.filesListFolder({
+        const cursorData = await dbxClient.filesListFolderGetLatestCursor({
           path: z.string().parse(response.result.path_display),
+          recursive: true,
         })
         await mapFilesService.updateChannelMapById(
           {
             dbxRootPath: response.result.path_display,
-            dbxCursor: filesData.result.cursor,
+            dbxCursor: cursorData.result.cursor,
           },
           channel.id,
         )
