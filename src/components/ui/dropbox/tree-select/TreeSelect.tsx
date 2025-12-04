@@ -58,7 +58,7 @@ export default function TreeSelect({
             'w-full rounded-md border px-3 py-2 text-left text-sm',
             'border-input transition-colors hover:border-ring',
             'focus:outline-none focus:ring-1 focus:ring-ring',
-            'border-gray-300 disabled:cursor-not-allowed disabled:opacity-50',
+            'border-gray-300 disabled:opacity-50',
           )}
         />
       ) : (
@@ -70,9 +70,9 @@ export default function TreeSelect({
             'w-full rounded-sm border bg-background px-3 py-2 text-left text-sm',
             'border-input transition-colors hover:border-ring',
             'flex items-center justify-between',
-            'cursor-pointer border-gray-300 disabled:cursor-not-allowed disabled:opacity-50',
+            'cursor-pointer border-gray-300 disabled:opacity-50',
             isOpen && 'border-ring ring-1 ring-ring/50',
-            disabled && 'pointer-events-none cursor-not-allowed opacity-65',
+            disabled && 'pointer-events-none opacity-65',
           )}
         >
           {selectedLabel && <Icon icon="Files" width={16} height={16} className="me-2" />}
