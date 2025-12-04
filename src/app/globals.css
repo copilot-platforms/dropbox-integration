@@ -15,10 +15,11 @@
   --color-button-primary: #212b36;
   --color-button-disabled: #1f000000;
   --color-card-divider: #ededf0;
+  --color-input-border: rgba(239, 241, 244, 1);
 
   /* Text */
   --color-text-primary: var(--text-primary);
-  --color-text-secondary: #6b6f76;
+  --color-text-secondary: #9b9fa3;
 }
 
 /* prevent layout shift caused by scrollbar */
@@ -34,7 +35,7 @@ body {
 /* Undo preflight for specific elements.*/
 @layer base {
   /* Revert and restore styles for svg element */
-  svg {
+  .revert-svg svg {
     all: revert;
     fill: none;
   }

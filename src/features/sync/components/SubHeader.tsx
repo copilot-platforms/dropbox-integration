@@ -9,7 +9,9 @@ export const SubHeader = () => {
   return (
     <div className="mx-10 mb-5 flex items-center justify-between">
       <div className="font-bold text-lg">Sync Rules</div>
-      <Button label="Add" prefixIcon="Plus" onClick={handleAddRule} />
+      <div className="revert-svg">
+        <Button label="Add" prefixIcon="Plus" onClick={handleAddRule} />
+      </div>
     </div>
   )
 }
