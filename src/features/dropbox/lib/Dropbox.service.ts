@@ -9,9 +9,15 @@ import logger from '@/lib/logger'
 
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree() {
-    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    // Pass the rootNamespaceId from the connection token
+    const dbxClient = this.dbxApi.getDropboxClient(
+      this.connectionToken.refreshToken,
+      this.connectionToken.rootNamespaceId
+    )
+    
+    // Now this call will be rooted in the Team Space
     let dbxResponse = await dbxClient.filesListFolder({
-      path: '',
+      path: '', // "" is now the Team Space root, not the Member Folder
       recursive: true,
       limit: MAX_FETCH_DBX_RESOURCES,
     })
