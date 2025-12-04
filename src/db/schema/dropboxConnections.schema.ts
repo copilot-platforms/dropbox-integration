@@ -17,6 +17,9 @@ export const dropboxConnections = pgTable(
     // refreshToken to refresh accessToken returned from DropboxAuth
     refreshToken: varchar({ length: 255 }),
 
+    // Add this column
+    rootNamespaceId: varchar({ length: 100 }),
+
     // Connection status
     status: boolean().notNull().default(false),
 
@@ -34,6 +37,7 @@ export type DropboxConnection = z.infer<typeof DropboxConnectionSchema>
 export type DropboxConnectionTokens = {
   refreshToken: string
   accountId: string
+  rootNamespaceId?: string | null // Add this
 }
 export type DropboxConnectionWithTokens = DropboxConnection & DropboxConnectionTokens
 

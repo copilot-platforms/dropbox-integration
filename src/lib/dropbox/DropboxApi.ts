@@ -52,9 +52,20 @@ export class DropboxApi {
    * @returns instance of Dropbox client
    * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
-  getDropboxClient(refreshToken: string): Dropbox {
+  getDropboxClient(refreshToken: string, rootNamespaceId?: string | null): Dropbox {
     this.refreshAccessToken(refreshToken)
-    return new Dropbox({ auth: this.dropboxAuth })
+    
+    const options: any = { auth: this.dropboxAuth }
+    
+    // If we have a root namespace, set the header
+    if (rootNamespaceId) {
+      options.pathRoot = JSON.stringify({
+        '.tag': 'root',
+        root: rootNamespaceId,
+      })
+    }
+
+    return new Dropbox(options)
   }
 
   async _getAuthUrl(state: string) {

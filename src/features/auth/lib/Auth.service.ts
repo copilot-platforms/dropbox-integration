@@ -14,6 +14,18 @@ class AuthService extends BaseService {
     try {
       const dpx = new DropboxApi()
       tokenSet = await dpx.handleDropboxCallback(urlParams)
+      
+      // NEW: Fetch the user's account info to get the Team Root Namespace ID
+      // We temporarily need an access token for this. The tokenSet usually has it.
+      // If tokenSet only has refresh token, we might need to assume dpx.dropboxAuth has the access token cached in memory 
+      // or explicitly use the one returned in tokenSet if available.
+      
+      // Assuming dpx.dropboxAuth internal state is valid after handleDropboxCallback:
+      const accessToken = dpx['dropboxAuth'].getAccessToken() 
+      const accountInfo = await dpx.getCurrentAccount(accessToken)
+      
+      // The root_namespace_id is strictly available on root_info
+      const rootNamespaceId = accountInfo.root_info?.root_namespace_id
     } catch (error) {
       logger.error('AuthService#handleDropboxCallback :: Error handling Dropbox callback:', error)
       throw new Error('Error handling Dropbox callback')
@@ -22,6 +34,7 @@ class AuthService extends BaseService {
     const dpxConnectionService = new DropboxConnectionsService(this.user)
     return await dpxConnectionService.updateConnectionForWorkspace({
       ...tokenSet,
+      rootNamespaceId, // Save this to DB
       status: true,
     })
   }
