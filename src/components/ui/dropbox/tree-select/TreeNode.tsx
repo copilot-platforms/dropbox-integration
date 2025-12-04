@@ -34,7 +34,7 @@ export default function TreeNode({
         className={cn(
           'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5',
           isSelected && 'bg-accent text-accent-foreground',
-          node.disabled && 'cursor-not-allowed opacity-50',
+          node.disabled && 'opacity-50',
           'hover:bg-gray-100',
         )}
         style={{ paddingLeft: `${level * 20 + 8}px` }}

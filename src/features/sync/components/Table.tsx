@@ -124,7 +124,7 @@ const MappingTableRow = () => {
                         size="sm"
                         onClick={() => handleSync(index)}
                         disabled={mapItem.status === null ? true : mapItem.status}
-                        className={`${mapItem.status === null ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`${mapItem.status === null ? '' : 'cursor-pointer'}`}
                       />
                     </Tooltip>
                   )}
