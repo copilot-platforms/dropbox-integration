@@ -83,7 +83,10 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
 
     return flatTree
       .filter((node) => {
-        return node.label.toLowerCase().includes(query.toLowerCase())
+        return (
+          node.label.toLowerCase().includes(query.toLowerCase()) ||
+          node.path.toLowerCase().includes(query.toLowerCase())
+        )
       })
       .map((node) => ({
         ...node,

@@ -25,7 +25,7 @@ interface TreeSelectProps {
 
 function CloseIconComponent({ onChange }: { onChange: (val: string | null) => void }) {
   return (
-    <div className="absolute inset-y-0 right-3 flex items-center">
+    <div className="absolute inset-y-0 right-2 flex items-center">
       <button
         type="button"
         onClick={(e) => {
@@ -86,6 +86,7 @@ export default function TreeSelect({
               'border-input-border transition-colors hover:border-ring',
               'focus:outline-none focus:ring-1 focus:ring-ring',
               'placeholder-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
+              'border-ring ring-1 ring-ring/50',
             )}
           />
           {searchFilterValue && <CloseIconComponent onChange={onChange} />}
