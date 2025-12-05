@@ -1,9 +1,12 @@
+import z from 'zod'
 import type { PageProps } from '@/app/(home)/types'
 import { CheckConnection } from '@/components/layouts/CheckConnection'
+import { AppBridge } from '@/features/app-bridge/components/AppBridge'
 import { Callout } from '@/features/auth/components/Callout'
 import { RealtimeDropboxConnections } from '@/features/auth/components/RealtimeDropboxConnections'
 import { AuthContextProvider } from '@/features/auth/context/AuthContext'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
+import { disconnectDropbox } from '@/features/auth/utils/dropboxConnections'
 import { RealtimeSync } from '@/features/sync/components/RealtimeSync'
 import { SubHeader } from '@/features/sync/components/SubHeader'
 import { MappingTable } from '@/features/sync/components/Table'
@@ -13,10 +16,12 @@ import { UserService } from '@/features/sync/lib/User.service'
 import type { MapList } from '@/features/sync/types'
 import { serializeClientUser } from '@/lib/copilot/models/ClientUser.model'
 import User from '@/lib/copilot/models/User.model'
+import { getWorkspace } from '@/utils/workspace'
 
 const Home = async ({ searchParams }: PageProps) => {
   const sp = await searchParams
   const user = await User.authenticate(sp.token)
+  const token = z.string().parse(sp.token)
   const clientUser = serializeClientUser(user)
 
   const dpxConnectionService = new DropboxConnectionsService(user)
@@ -24,6 +29,7 @@ const Home = async ({ searchParams }: PageProps) => {
 
   const userService = new UserService(user)
   const users = await userService.getSelectorClientsCompanies()
+  const workspace = await getWorkspace(token)
   let mapList: MapList[] = [],
     tempMapList: MapList[] = []
 
@@ -49,6 +55,13 @@ const Home = async ({ searchParams }: PageProps) => {
       >
         <RealtimeSync user={clientUser} />
         <CheckConnection>
+          <AppBridge
+            handleDropboxDisconnection={async () => {
+              'use server'
+              await disconnectDropbox(token)
+            }}
+            portalUrl={workspace.portalUrl}
+          />
           <SubHeader />
           <MappingTable />
         </CheckConnection>
