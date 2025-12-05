@@ -12,9 +12,9 @@ export class DropboxService extends AuthenticatedDropboxService {
     // Pass the rootNamespaceId from the connection token
     const dbxClient = this.dbxApi.getDropboxClient(
       this.connectionToken.refreshToken,
-      this.connectionToken.rootNamespaceId
+      this.connectionToken.rootNamespaceId,
     )
-    
+
     // Now this call will be rooted in the Team Space
     let dbxResponse = await dbxClient.filesListFolder({
       path: '', // "" is now the Team Space root, not the Member Folder

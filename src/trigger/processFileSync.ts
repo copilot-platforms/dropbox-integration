@@ -74,7 +74,10 @@ export const initiateDropboxToAssemblySync = task({
 
     // 1. get all the files folder from dropbox
     const dbxApi = new DropboxApi()
-    const dbxClient = dbxApi.getDropboxClient(connectionToken.refreshToken)
+    const dbxClient = dbxApi.getDropboxClient(
+      connectionToken.refreshToken,
+      connectionToken.rootNamespaceId,
+    )
 
     let dbxFiles = await dbxClient.filesListFolder({
       path: dbxRootPath,

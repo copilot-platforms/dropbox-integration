@@ -19,6 +19,7 @@ export const getFolderTree = async (req: NextRequest) => {
     const dropboxService = new DropboxService(user, {
       refreshToken: connection.refreshToken,
       accountId: connection.accountId,
+      rootNamespaceId: connection.rootNamespaceId,
     })
     const folders = await dropboxService.getFolderTree()
     return NextResponse.json({ message: 'Sync initiated successfully', folders }, { status: 200 })

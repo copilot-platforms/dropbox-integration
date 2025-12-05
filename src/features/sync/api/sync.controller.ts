@@ -21,6 +21,7 @@ export const initiateSync = async (req: NextRequest) => {
   const syncService = new SyncService(user, {
     refreshToken: connection.refreshToken,
     accountId: connection.accountId,
+    rootNamespaceId: connection.rootNamespaceId,
   })
 
   // 3. get total files count (sum of all files in file channel + files in dropbox path)
@@ -48,6 +49,7 @@ export const updateSyncStatus = async (req: NextRequest) => {
   const mapService = new MapFilesService(user, {
     refreshToken: connection.refreshToken,
     accountId: connection.accountId,
+    rootNamespaceId: connection.rootNamespaceId,
   })
   await mapService.updateChannelMap(
     {
