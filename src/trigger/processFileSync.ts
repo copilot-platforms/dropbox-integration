@@ -83,6 +83,7 @@ export const initiateDropboxToAssemblySync = task({
       path: dbxRootPath,
       recursive: true,
       limit: MAX_FILES_LIMIT,
+      include_non_downloadable_files: false,
     })
 
     // 2. loop over the dropbox files
