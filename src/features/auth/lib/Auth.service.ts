@@ -16,11 +16,7 @@ class AuthService extends BaseService {
       const dbx = new DropboxApi()
       tokenSet = await dbx.handleDropboxCallback(urlParams)
 
-      // NEW: Fetch the user's account info to get the Team Root Namespace ID
-      // We temporarily need an access token for this. The tokenSet usually has it.
-      // If tokenSet only has refresh token, we might need to assume dbx.dropboxAuth has the access token cached in memory
-      // or explicitly use the one returned in tokenSet if available.
-
+      // Need to get the user's account info to get the Team Root Namespace ID. This step makes sure we are accessing the root folder that includes both personal and team folder
       console.info('AuthService#handleDropboxCallback :: Getting account info')
       const dbxClient = dbx.getDropboxClient(tokenSet.refreshToken)
       const accountInfo = await dbxClient.usersGetCurrentAccount()
