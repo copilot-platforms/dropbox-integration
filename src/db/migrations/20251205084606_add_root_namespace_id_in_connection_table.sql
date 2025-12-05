@@ -1,0 +1,1 @@
+ALTER TABLE "dropbox_connections" ADD COLUMN "root_namespace_id" varchar(100);

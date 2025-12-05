@@ -37,7 +37,7 @@ export type DropboxConnection = z.infer<typeof DropboxConnectionSchema>
 export type DropboxConnectionTokens = {
   refreshToken: string
   accountId: string
-  rootNamespaceId?: string | null // Add this
+  rootNamespaceId: string | null
 }
 export type DropboxConnectionWithTokens = DropboxConnection & DropboxConnectionTokens
 

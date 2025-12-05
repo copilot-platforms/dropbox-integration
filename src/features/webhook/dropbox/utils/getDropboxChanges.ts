@@ -4,13 +4,14 @@ import type { DropboxApi } from '@/lib/dropbox/DropboxApi'
 
 export async function getDropboxChanges(
   refreshToken: string,
+  rootNamespaceId: string | null,
   cursor: string,
   rootPath: string,
   dbxApi: DropboxApi,
   mapFilesService: MapFilesService,
   channelSyncId: string,
 ) {
-  const dbx = dbxApi.getDropboxClient(refreshToken)
+  const dbx = dbxApi.getDropboxClient(refreshToken, rootNamespaceId)
 
   try {
     const response = await dbx.filesListFolderContinue({ cursor })

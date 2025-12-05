@@ -3,6 +3,7 @@ import { DropboxResponseError } from 'dropbox'
 import httpStatus from 'http-status'
 import { ApiError as CopilotApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import fetch from 'node-fetch'
+import z from 'zod'
 import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
@@ -39,7 +40,10 @@ export class SyncService extends AuthenticatedDropboxService {
       assemblyChannelId,
       dbxRootPath,
     )
-    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxClient = this.dbxApi.getDropboxClient(
+      this.connectionToken.refreshToken,
+      this.connectionToken.rootNamespaceId,
+    )
     const dbxFilesList = dbxClient.filesListFolder({
       path: dbxRootPath,
       recursive: true,
@@ -62,7 +66,11 @@ export class SyncService extends AuthenticatedDropboxService {
     logger.info(
       `SyncService#handleChannelMap :: handling channel map for channel ${assemblyChannelId} and root path ${dbxRootPath}`,
     )
-    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxClient = this.dbxApi.getDropboxClient(
+      this.connectionToken.refreshToken,
+      this.connectionToken.rootNamespaceId,
+    )
+
     const dbxResponse = await dbxClient.filesGetMetadata({
       path: dbxRootPath,
     })
@@ -248,7 +256,10 @@ export class SyncService extends AuthenticatedDropboxService {
       }
       const { dbxRootPath } = opts
       const dbxFilePath = `${dbxRootPath}${mappedFile.itemPath}`
-      const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+      const dbxClient = this.dbxApi.getDropboxClient(
+        this.connectionToken.refreshToken,
+        this.connectionToken.rootNamespaceId,
+      )
       await this.mapFilesService.deleteFileMap(mappedFile.id)
       await dbxClient.filesDeleteV2({ path: dbxFilePath })
       logger.info(
@@ -266,11 +277,18 @@ export class SyncService extends AuthenticatedDropboxService {
   private async uploadFileInAssembly(dbxPath: string, uploadUrl: string, copilotApi: CopilotAPI) {
     logger.info('SyncService#uploadFileInAssembly :: Uploading file to Assembly', dbxPath)
 
-    const dbxFileResponse = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxFileResponse = this.dbxApi.getDropboxClient(
+      this.connectionToken.refreshToken,
+      this.connectionToken.rootNamespaceId,
+    )
     const fileMetaData = await dbxFileResponse.filesDownload({ path: dbxPath }) // get metadata for the files
     logger.info('SyncService#uploadFileInAssembly :: File metadata downloaded', dbxPath)
 
-    const downloadBody = await this.dbxApi.downloadFile(DBX_URL_PATH.fileDownload, dbxPath)
+    const downloadBody = await this.dbxApi.downloadFile(
+      DBX_URL_PATH.fileDownload,
+      dbxPath,
+      z.string().parse(this.connectionToken.rootNamespaceId),
+    )
     logger.info('SyncService#uploadFileInAssembly :: Found downloadBody', Boolean(downloadBody))
 
     // upload file to assembly
@@ -352,7 +370,10 @@ export class SyncService extends AuthenticatedDropboxService {
   ): Promise<{ dbxFileId: string; contentHash?: string } | undefined> {
     console.info(`SyncService#createAndUploadFileInDropbox. Channel ID: ${file.channelId}`)
 
-    const dbxClient = this.dbxApi.getDropboxClient(this.connectionToken.refreshToken)
+    const dbxClient = this.dbxApi.getDropboxClient(
+      this.connectionToken.refreshToken,
+      this.connectionToken.rootNamespaceId,
+    )
     const dbxFilePath = `${dbxRootPath}/${file.path}`
     logger.info('SyncService#createAndUploadFileInDropbox :: Found dbxFilePath', dbxFilePath)
 
@@ -418,7 +439,12 @@ export class SyncService extends AuthenticatedDropboxService {
       // download file from Assembly
       const resp = await fetch(file.downloadUrl)
       // upload file to dropbox
-      const dbxResponse = await this.dbxApi.uploadFile(DBX_URL_PATH.fileUpload, path, resp.body)
+      const dbxResponse = await this.dbxApi.uploadFile(
+        DBX_URL_PATH.fileUpload,
+        path,
+        resp.body,
+        z.string().parse(this.connectionToken.rootNamespaceId),
+      )
       logger.info('SyncService#uploadFileInDropbox :: File uploaded to', path)
       return {
         dbxFileId: dbxResponse.id,

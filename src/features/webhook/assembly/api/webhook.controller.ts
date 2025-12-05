@@ -23,6 +23,7 @@ export const handleWebhookEvent = async (req: NextRequest) => {
   const assemblyWebhookService = new AssemblyWebhookService(user, {
     refreshToken: connection.refreshToken,
     accountId: connection.accountId,
+    rootNamespaceId: connection.rootNamespaceId,
   })
   const webhookEvent = await assemblyWebhookService.parseWebhook(req)
   logger.info(`Event triggered. ${JSON.stringify(webhookEvent)}`)
