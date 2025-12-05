@@ -42,3 +42,8 @@ export interface Clickable {
 export interface Configurable {
   portalUrl?: string
 }
+
+export interface AppBridgeProps {
+  portalUrl: string
+  handleDropboxDisconnection: () => Promise<void>
+}

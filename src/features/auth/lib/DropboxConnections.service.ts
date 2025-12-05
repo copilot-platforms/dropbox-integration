@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import z from 'zod'
 import db from '@/db'
+import { channelSync } from '@/db/schema/channelSync.schema'
 import {
   type DropboxConnection,
   type DropboxConnectionUpdatePayload,
@@ -67,6 +68,26 @@ class DropboxConnectionsService extends BaseService {
         initiatedBy: true,
         refreshToken: true,
       },
+    })
+  }
+
+  async disconnect() {
+    logger.info(
+      'DropboxConnectionService#disconnect :: Disconnecting for workspace ',
+      this.user.portalId,
+    )
+
+    //disconnect all channel syncs and the connection.
+    return await db.transaction(async (trx) => {
+      await trx
+        .update(channelSync)
+        .set({ status: false })
+        .where(eq(channelSync.portalId, this.user.portalId))
+
+      await trx
+        .update(dropboxConnections)
+        .set({ status: false })
+        .where(eq(dropboxConnections.portalId, this.user.portalId))
     })
   }
 }

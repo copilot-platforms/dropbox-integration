@@ -33,6 +33,7 @@ export const WorkspaceResponseSchema = z.object({
       groupTermPlural: z.string().optional(),
     })
     .optional(),
+  portalUrl: z.string(),
 })
 export type WorkspaceResponse = z.infer<typeof WorkspaceResponseSchema>
 
