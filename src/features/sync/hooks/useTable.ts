@@ -59,6 +59,7 @@ export const useTable = () => {
       ...prev,
       tempMapList: prev.tempMapList.filter((_, i) => i !== index),
     }))
+    setFilteredValue((prev) => ({ ...prev, [index]: null }))
   }
 
   const handleSync = async (index: number) => {
