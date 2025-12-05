@@ -48,6 +48,7 @@ export class SyncService extends AuthenticatedDropboxService {
       path: dbxRootPath,
       recursive: true,
       limit: MAX_FETCH_DBX_RESOURCES,
+      include_non_downloadable_files: false,
     })
     const assemblyFilesList = this.user.copilot.listFiles(assemblyChannelId)
     const [dbxFiles, assemblyFiles] = await Promise.all([dbxFilesList, assemblyFilesList])

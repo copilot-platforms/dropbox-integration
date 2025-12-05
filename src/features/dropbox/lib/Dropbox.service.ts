@@ -20,6 +20,7 @@ export class DropboxService extends AuthenticatedDropboxService {
       path: '', // "" is now the Team Space root, not the Member Folder
       recursive: true,
       limit: MAX_FETCH_DBX_RESOURCES,
+      include_non_downloadable_files: false,
     })
     let entries = dbxResponse.result.entries || []
     if (dbxResponse.status !== httpStatus.OK) {
