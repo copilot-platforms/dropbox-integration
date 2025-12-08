@@ -1,3 +1,4 @@
+import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type { WorkspaceResponse } from '@/lib/copilot/types'
 
 export const getWorkspaceLabel = (
@@ -10,4 +11,9 @@ export const getWorkspaceLabel = (
     groupTerm: workspace.labels?.groupTerm?.toLowerCase() || 'company',
     groupTermPlural: workspace.labels?.groupTermPlural?.toLowerCase() || 'companies',
   }[key]
+}
+
+export async function getWorkspace(token: string): Promise<WorkspaceResponse> {
+  const copilot = new CopilotAPI(token)
+  return await copilot.getWorkspace()
 }
