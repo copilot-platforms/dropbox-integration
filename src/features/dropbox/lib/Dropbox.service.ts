@@ -1,6 +1,7 @@
 import type { files } from 'dropbox'
 import httpStatus from 'http-status'
-import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
+import type { NextRequest } from 'next/server'
+import { MAX_FETCH_DBX_RESOURCES, MAX_FETCH_DBX_SEARCH_LIMIT } from '@/constants/limits'
 import { ObjectType } from '@/db/constants'
 import APIError from '@/errors/APIError'
 import type { Folder } from '@/features/sync/types'
@@ -8,35 +9,48 @@ import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.serv
 import logger from '@/lib/logger'
 
 export class DropboxService extends AuthenticatedDropboxService {
-  async getFolderTree() {
+  async getFolderTree(req: NextRequest) {
+    const search = req.nextUrl.searchParams.get('search')
+
     // Pass the rootNamespaceId from the connection token
     const dbxClient = this.dbxApi.getDropboxClient(
       this.connectionToken.refreshToken,
       this.connectionToken.rootNamespaceId,
     )
 
+    if (search) {
+      logger.info('DropboxService#getFolderTree :: Searching folder in Dropbox... Query: ', search)
+      const searchResponse = await dbxClient.filesSearchV2({
+        query: search,
+        options: {
+          max_results: MAX_FETCH_DBX_SEARCH_LIMIT,
+        },
+      })
+      if (searchResponse.status !== httpStatus.OK) {
+        throw new APIError('Cannot fetch the folders', searchResponse.status)
+      }
+
+      return this.formatSearchResults(searchResponse.result.matches)
+    }
+
     // Now this call will be rooted in the Team Space
-    let dbxResponse = await dbxClient.filesListFolder({
+    const dbxResponse = await dbxClient.filesListFolder({
       path: '', // "" is now the Team Space root, not the Member Folder
-      recursive: true,
+      recursive: false,
       limit: MAX_FETCH_DBX_RESOURCES,
       include_non_downloadable_files: false,
     })
-    let entries = dbxResponse.result.entries || []
+    const entries = dbxResponse.result.entries || []
+
     if (dbxResponse.status !== httpStatus.OK) {
       throw new APIError('Cannot fetch the folders', dbxResponse.status)
-    }
-
-    while (dbxResponse.result.has_more) {
-      dbxResponse = await dbxClient.filesListFolderContinue({ cursor: dbxResponse.result.cursor })
-      entries = entries.concat(dbxResponse.result.entries)
     }
 
     logger.info('DropboxService#getFolderTree :: Fetched folder tree', entries)
     return this.buildFolderTree(entries)
   }
 
-  private buildFolderTree(entries: files.ListFolderResult['entries']) {
+  private buildFolderTree(entries: files.ListFolderResult['entries']): Folder[] {
     const root: Folder[] = []
 
     const findOrCreate = (children: Folder[], path: string, label: string) => {
@@ -68,5 +82,21 @@ export class DropboxService extends AuthenticatedDropboxService {
 
     logger.info('DropboxService#buildFolderTree :: Built folder tree', root)
     return root
+  }
+
+  private formatSearchResults(matches: files.SearchMatchV2[]) {
+    return matches
+      .map((match) => {
+        if (match.metadata['.tag'] === 'other') return null
+
+        const data = match.metadata.metadata
+        if (data['.tag'] !== ObjectType.FOLDER) return null
+        return {
+          path: data.path_display,
+          label: data.path_display,
+          children: [],
+        }
+      })
+      .filter((item) => item !== null)
   }
 }

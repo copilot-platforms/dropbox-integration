@@ -21,8 +21,8 @@ export const getFolderTree = async (req: NextRequest) => {
       accountId: connection.accountId,
       rootNamespaceId: connection.rootNamespaceId,
     })
-    const folders = await dropboxService.getFolderTree()
-    return NextResponse.json({ message: 'Sync initiated successfully', folders }, { status: 200 })
+    const folders = await dropboxService.getFolderTree(req)
+    return NextResponse.json({ message: 'Folder tree fetched successfully', folders })
   } catch (error) {
     console.warn('Something went wrong', error)
     return NextResponse.json({ message: 'Something went wrong', folders: [] })

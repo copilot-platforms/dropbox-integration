@@ -1,6 +1,6 @@
 'use client'
 
-import { Icon, IconButton } from 'copilot-design-system'
+import { Icon, IconButton, Tooltip } from 'copilot-design-system'
 import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/components/utils'
 
@@ -54,10 +54,13 @@ export default function TreeNode({
           />
         )}
 
-        {!hasChildren && <div className="w-8" />}
+        {/* {!hasChildren && <div className="w-8" />} */}
 
         <Icon icon="Files" color="#80A1BA" width={16} height={16} />
         <span className="flex-1 truncate text-sm">{node.label}</span>
+        <Tooltip content={node.label} position="bottom" tooltipClassname="text-xs">
+          <Icon icon="Info" width={16} height={16} className="ml-1" />
+        </Tooltip>
       </div>
 
       {hasChildren && isExpanded && (
