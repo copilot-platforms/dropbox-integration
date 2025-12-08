@@ -25,11 +25,12 @@ export class DropboxWebhook {
       throw new APIError('Connection not valid', status.INTERNAL_SERVER_ERROR)
     }
 
-    const { portalId, initiatedBy, refreshToken } = connection
+    const { portalId, initiatedBy, refreshToken, rootNamespaceId } = connection
 
     const connectionToken = {
       refreshToken,
       accountId,
+      rootNamespaceId,
     }
     const token = generateToken(env.COPILOT_API_KEY, {
       workspaceId: portalId,
@@ -44,7 +45,7 @@ export class DropboxWebhook {
     )
 
     const dbxApi = new DropboxApi()
-    const dbxClient = dbxApi.getDropboxClient(connectionToken.refreshToken)
+    const dbxClient = dbxApi.getDropboxClient(refreshToken, rootNamespaceId)
     for (const channel of channels) {
       const proceed = await this.handleDbxRootPathMove(channel, mapFilesService, dbxClient)
       proceed &&
@@ -123,6 +124,7 @@ export class DropboxWebhook {
         hasMore: more,
       } = await getDropboxChanges(
         connectionToken.refreshToken,
+        connectionToken.rootNamespaceId,
         currentCursor,
         dbxRootPath,
         dbxApi,
@@ -160,6 +162,7 @@ export class DropboxWebhook {
         portalId: true,
         initiatedBy: true,
         refreshToken: true,
+        rootNamespaceId: true,
       },
     })
   } // should have been resuable but this is only needed while consuming webhook events from dropbox.

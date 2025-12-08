@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
+import { useAuthContext } from '@/features/auth/hooks/useAuth'
 
 type UseTreeSelectProps = {
   options: TreeSelectNode[]
@@ -7,18 +8,38 @@ type UseTreeSelectProps = {
   onChange: (value: string | null) => void
 }
 
+const useDebounce = <T>(value: T, delay: number = 500) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => clearTimeout(handler)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
 export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [filterValue, setFilterValue] = useState('')
+  const [displayNodes, setDisplayNodes] = useState<TreeSelectNode[]>(options)
+  const [filterValue, setFilterValue] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const { user } = useAuthContext()
+  const debouncedQuery = useDebounce(filterValue)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Handle click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+        setFilterValue(null)
+        setDisplayNodes(options)
       }
     }
 
@@ -28,23 +49,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
         document.removeEventListener('mousedown', handleClickOutside)
       }
     }
-  }, [isOpen])
-
-  const getSelectedLabel = () => {
-    if (!value) return null
-
-    const findLabel = (nodes: TreeSelectNode[]): string | null => {
-      for (const node of nodes) {
-        if (node.path === value) return node.path
-        if (node.children) {
-          const found = findLabel(node.children)
-          if (found) return found
-        }
-      }
-      return null
-    }
-    return findLabel(options)
-  }
+  }, [isOpen, options])
 
   const handleNodeToggle = (path: string) => {
     const newExpandedKeys = new Set(expandedPaths)
@@ -59,7 +64,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
   const handleNodeSelect = (node: TreeSelectNode) => {
     onChange(node.path)
     setIsOpen(false)
-    setFilterValue('')
+    setFilterValue(null)
   }
 
   const flattenTree = (nodes: TreeSelectNode[]): TreeSelectNode[] => {
@@ -76,22 +81,54 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     return flattenedNodes
   }
 
-  const filterNodes = (nodes: TreeSelectNode[], query: string): TreeSelectNode[] => {
-    if (!query) return nodes
-    const flatTree = flattenTree(nodes)
+  const searchFolderInDropbox = useCallback(async () => {
+    if (!debouncedQuery) return
 
-    return flatTree
+    setIsSearching(true)
+    const response = await fetch(
+      `/api/dropbox/folder-tree?token=${user.token}&search=${filterValue}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+    const resp = await response.json()
+    setDisplayNodes(resp.folders || [])
+    setIsOpen(true)
+    setIsSearching(false)
+  }, [filterValue, user.token, debouncedQuery])
+
+  const filterNodes = async () => {
+    if (!debouncedQuery || !filterValue) {
+      setDisplayNodes(options)
+      return
+    }
+
+    const flatTree = flattenTree(options)
+
+    const result = flatTree
       .filter((node) => {
-        return node.label.toLowerCase().includes(query.toLowerCase())
+        return node.label.toLowerCase().includes(filterValue.toLowerCase())
       })
       .map((node) => ({
         ...node,
         label: node.path,
       }))
+    if (result.length === 0) {
+      // only trigger server filtering if there are no results
+      await searchFolderInDropbox()
+      return
+    }
+    setDisplayNodes(result)
   }
 
-  const displayNodes = filterNodes(options, filterValue)
-  const selectedLabel = getSelectedLabel()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: avoid filterNodes as dependency as it causes infinite loop
+  useEffect(() => {
+    // biome-ignore lint/nursery/noFloatingPromises: floating promises are fine here
+    filterNodes()
+  }, [debouncedQuery])
 
   return {
     inputRef,
@@ -103,7 +140,8 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     handleNodeToggle,
     handleNodeSelect,
     displayNodes,
-    selectedLabel,
+    selectedLabel: value || null,
     expandedPaths,
+    isSearching,
   }
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
-import type { Folder } from '../types'
+import type { Folder } from '@/features/sync/types'
 
 export const useFolder = () => {
   const { user } = useAuthContext()

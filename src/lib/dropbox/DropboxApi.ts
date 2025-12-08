@@ -52,9 +52,20 @@ export class DropboxApi {
    * @returns instance of Dropbox client
    * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
-  getDropboxClient(refreshToken: string): Dropbox {
+  getDropboxClient(refreshToken: string, rootNamespaceId?: string | null): Dropbox {
     this.refreshAccessToken(refreshToken)
-    return new Dropbox({ auth: this.dropboxAuth })
+
+    const options: { auth: DropboxAuth; pathRoot?: string } = { auth: this.dropboxAuth }
+
+    // If we have a root namespace, set the header
+    if (rootNamespaceId) {
+      options.pathRoot = JSON.stringify({
+        '.tag': 'root',
+        root: rootNamespaceId,
+      })
+    }
+
+    return new Dropbox(options)
   }
 
   async _getAuthUrl(state: string) {
@@ -84,9 +95,13 @@ export class DropboxApi {
     return DropboxAuthResponseSchema.parse(camelKeys(tokenSet.result))
   }
 
-  async _downloadFile(urlPath: string, filePath: string) {
+  async _downloadFile(urlPath: string, filePath: string, rootNamespaceId: string) {
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
+      'Dropbox-API-Path-Root': dropboxArgHeader({
+        '.tag': 'namespace_id',
+        namespace_id: rootNamespaceId,
+      }),
       'Dropbox-API-Arg': dropboxArgHeader({ path: filePath }),
     }
     const response = await this.manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
@@ -103,6 +118,7 @@ export class DropboxApi {
     urlPath: string,
     filePath: string,
     body: NodeJS.ReadableStream | null,
+    rootNamespaceId: string,
   ): Promise<DropboxFileMetadata> {
     const args = {
       path: filePath,
@@ -111,6 +127,10 @@ export class DropboxApi {
     }
     const headers = {
       Authorization: `Bearer ${this.dropboxAuth.getAccessToken()}`,
+      'Dropbox-API-Path-Root': dropboxArgHeader({
+        '.tag': 'namespace_id',
+        namespace_id: rootNamespaceId,
+      }),
       'Dropbox-API-Arg': dropboxArgHeader(args),
       'Content-Type': 'application/octet-stream',
     }

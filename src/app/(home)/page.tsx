@@ -37,6 +37,7 @@ const Home = async ({ searchParams }: PageProps) => {
     const connectionToken = {
       refreshToken: connection.refreshToken,
       accountId: connection.accountId,
+      rootNamespaceId: connection.rootNamespaceId,
     }
 
     const mapService = new MapFilesService(user, connectionToken)
