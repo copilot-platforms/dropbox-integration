@@ -1,6 +1,7 @@
 'use client'
 
-import { Icon } from 'copilot-design-system'
+import { Icon, Tooltip } from 'copilot-design-system'
+import { Loader } from '@/components/layouts/Loader'
 import TreeNode from '@/components/ui/dropbox/tree-select/TreeNode'
 import { useTreeSelect } from '@/components/ui/dropbox/useDropbox'
 import { cn } from '@/components/utils'
@@ -67,6 +68,7 @@ export default function TreeSelect({
     displayNodes,
     selectedLabel,
     expandedPaths,
+    isSearching,
   } = useTreeSelect({ options, value, onChange })
 
   const searchFilterValue = filterValue === null ? selectedLabel || '' : filterValue
@@ -101,7 +103,7 @@ export default function TreeSelect({
             'border-input border-input-border transition-colors',
             'flex items-center justify-between',
             'relative cursor-pointer placeholder-text-secondary disabled:opacity-50',
-            disabled && 'pointer-events-none opacity-65',
+            disabled && 'opacity-65',
           )}
         >
           {selectedLabel && <Icon icon="Files" width={16} height={16} className="me-2" />}
@@ -111,7 +113,9 @@ export default function TreeSelect({
               !selectedLabel && 'text-[var(--color-text-secondary)]',
             )}
           >
-            {selectedLabel || placeholder}
+            <Tooltip content={selectedLabel || ''} position="bottom" tooltipClassname="text-xs">
+              {selectedLabel || placeholder}
+            </Tooltip>
           </span>
           {selectedLabel && !disabled && <CloseIconComponent onChange={onChange} />}
         </div>
@@ -129,6 +133,10 @@ export default function TreeSelect({
             {displayNodes.length === 0 ? (
               <div className="px-2 py-4 text-center text-muted-foreground text-sm">
                 No items found
+              </div>
+            ) : isSearching ? (
+              <div className="flex items-center justify-center">
+                <Loader size={5} />
               </div>
             ) : (
               displayNodes.map((node) => (
