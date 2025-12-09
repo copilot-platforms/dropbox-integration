@@ -1,0 +1,1 @@
+export const MAX_RECURSION_ATTEMPTS = 3
