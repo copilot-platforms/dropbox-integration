@@ -57,6 +57,13 @@
       "when": 1764924366843,
       "tag": "20251205084606_add_root_namespace_id_in_connection_table",
       "breakpoints": false
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1765258299790,
+      "tag": "20251209053139_add_combined_index_in_channel_sync",
+      "breakpoints": false
     }
   ]
 }

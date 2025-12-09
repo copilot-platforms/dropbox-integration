@@ -42,6 +42,11 @@ export const channelSync = pgTable(
       table.assemblyChannelId,
       table.dbxRootPath,
     ),
+    index('idx_channel_sync_portal_id_deleted_at_created_at').on(
+      table.portalId,
+      table.createdAt.asc(),
+      table.deletedAt.nullsFirst(),
+    ),
   ],
 )
 
