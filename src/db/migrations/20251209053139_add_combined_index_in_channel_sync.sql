@@ -1,0 +1,1 @@
+CREATE INDEX "idx_channel_sync_portal_id_deleted_at_created_at" ON "channel_sync" USING btree ("portal_id","created_at","deleted_at" NULLS FIRST);
