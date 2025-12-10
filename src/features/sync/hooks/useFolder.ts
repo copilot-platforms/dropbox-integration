@@ -3,11 +3,15 @@ import { useAuthContext } from '@/features/auth/hooks/useAuth'
 import type { Folder } from '@/features/sync/types'
 
 export const useFolder = () => {
-  const { user } = useAuthContext()
+  const { user, connectionStatus } = useAuthContext()
   const [folderTree, setFolderTree] = useState<Folder[]>([])
   const [isFolderTreeLoading, setIsFolderTreeLoading] = useState(true)
 
   const getPathOptions = useCallback(async () => {
+    if (!connectionStatus) {
+      setIsFolderTreeLoading(false)
+      return
+    }
     setIsFolderTreeLoading(true)
     // api call to get all the folders
     const response = await fetch(`/api/dropbox/folder-tree?token=${user.token}`, {
@@ -19,7 +23,7 @@ export const useFolder = () => {
     const resp = await response.json()
     setFolderTree(resp.folders)
     setIsFolderTreeLoading(false)
-  }, [user.token])
+  }, [user.token, connectionStatus])
 
   useEffect(() => {
     // biome-ignore lint/nursery/noFloatingPromises: floating promises are fine here
