@@ -32,6 +32,20 @@ const MappingTableStatus = ({
   )
 }
 
+const MappingTableNoRecords = () => {
+  return (
+    <tr>
+      <td colSpan={5} className="py-12">
+        <div className="flex items-center justify-center">
+          <div className="text-sm">
+            Start by adding a mapping between an Assembly file channel and a Dropbox folder.
+          </div>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
 const MappingTableRow = () => {
   const {
     handleSyncStatusChange,
@@ -56,7 +70,7 @@ const MappingTableRow = () => {
 
   return (
     <>
-      {!!tempMapList.length &&
+      {tempMapList.length ? (
         tempMapList.map((mapItem, index) => (
           <tr key={`${generateRandomString(8)}-${index}`}>
             <td className="w-80 whitespace-nowrap px-6 py-2">
@@ -140,7 +154,10 @@ const MappingTableRow = () => {
               )}
             </td>
           </tr>
-        ))}
+        ))
+      ) : (
+        <MappingTableNoRecords />
+      )}
     </>
   )
 }
