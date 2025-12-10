@@ -155,7 +155,7 @@ export const MappingTable = () => {
   ]
 
   return (
-    <div className="m-10 mt-0 border border-gray-200 bg-white">
+    <div className="m-10 mt-0 overflow-x-auto border border-gray-200 bg-white">
       <div className="">
         <table className="w-full">
           <thead className="border-gray-200 border-b bg-gray-50">
