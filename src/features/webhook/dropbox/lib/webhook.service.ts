@@ -1,6 +1,5 @@
 import { and, eq } from 'drizzle-orm'
 import { type Dropbox, DropboxResponseError } from 'dropbox'
-import status from 'http-status'
 import httpStatus from 'http-status'
 import z from 'zod'
 import env from '@/config/server.env'
@@ -22,7 +21,10 @@ export class DropboxWebhook {
     const connection = await this.getActiveConnection(accountId)
 
     if (!connection || !connection.refreshToken) {
-      throw new APIError('Connection not valid', status.INTERNAL_SERVER_ERROR)
+      console.error(
+        `DropboxWebhook#fetchDropboxChanges :: Connection is not valid for Dropbox accountId: ${accountId}`,
+      )
+      return
     }
 
     const { portalId, initiatedBy, refreshToken, rootNamespaceId } = connection
