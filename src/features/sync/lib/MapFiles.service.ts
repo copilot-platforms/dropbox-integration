@@ -454,6 +454,14 @@ export class MapFilesService extends AuthenticatedDropboxService {
         ]
       }
 
+      // calculate synced percentage.
+      const syncedPercentage =
+        channelMap.status === null
+          ? Math.floor((channelMap.syncedFilesCount / channelMap.totalFilesCount) * 100)
+          : channelMap.status
+            ? 100
+            : 0
+
       const formattedChannelInfo = {
         id: channelMap.id,
         fileChannelValue,
@@ -461,6 +469,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
         status: channelMap.status,
         fileChannelId: fileChannel.id,
         lastSyncedAt: channelMap.lastSyncedAt,
+        syncedPercentage,
       }
       logger.info('MapFilesService#formatChannelMap :: Formatted channel map', formattedChannelInfo)
 

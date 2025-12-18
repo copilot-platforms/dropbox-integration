@@ -104,12 +104,12 @@ const MappingTableRow = () => {
               <div className="flex items-center gap-2">
                 <MappingTableStatus
                   status={mapItem.status}
-                  percentage={syncedPercentage?.[index] || 0}
+                  percentage={syncedPercentage?.[index] || mapItem.syncedPercentage || 0}
                 />
               </div>
             </td>
             <td className="w-[150px] whitespace-nowrap px-6 py-2">
-              {mapItem.id ? (
+              {mapItem.id && mapItem.status !== null ? (
                 <Tooltip
                   content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
                   position="bottom"

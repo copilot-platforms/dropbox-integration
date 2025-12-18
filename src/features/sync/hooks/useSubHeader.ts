@@ -22,6 +22,7 @@ export const useSubHeader = () => {
             status: false,
             fileChannelId: '',
             lastSyncedAt: null,
+            syncedPercentage: 0,
           },
         ],
       }))
