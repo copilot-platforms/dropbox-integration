@@ -1,6 +1,6 @@
 'use client'
 
-import { IconButton, Tooltip } from 'copilot-design-system'
+import { Button } from 'copilot-design-system'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
@@ -93,14 +93,14 @@ const MappingTableRow = () => {
                 disabled={!!mapItem.status}
               />
             </td>
-            <td className="w-[200px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
+            <td className="w-[150px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
               {mapItem.status && mapItem.lastSyncedAt ? (
                 <LastSyncAt date={mapItem.lastSyncedAt} />
               ) : (
                 '-'
               )}
             </td>
-            <td className="w-[160px] whitespace-nowrap px-6 py-2">
+            <td className="w-[150px] whitespace-nowrap px-6 py-2">
               <div className="flex items-center gap-2">
                 <MappingTableStatus
                   status={mapItem.status}
@@ -108,48 +108,39 @@ const MappingTableRow = () => {
                 />
               </div>
             </td>
-            <td className="w-[150px] whitespace-nowrap px-6 py-2">
+            <td className="revert-svg w-[220px] whitespace-nowrap px-6 py-2">
               {mapItem.id && mapItem.status !== null ? (
-                <Tooltip
-                  content={`${mapItem.status ? 'Disconnect' : 'Enable'} Sync`}
-                  position="bottom"
-                  tooltipClassname="text-sm"
-                >
-                  <IconButton
-                    icon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleSyncStatusChange(index)}
-                    color={`${mapItem.status ? '#b91c1c' : '#15803d'}`}
-                    className="cursor-pointer"
-                  />
-                </Tooltip>
+                <Button
+                  label={`${mapItem.status ? 'Disconnect' : 'Enable'}`}
+                  prefixIcon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSyncStatusChange(index)}
+                />
               ) : (
                 <div className="flex items-center gap-3">
-                  {mapItem.dbxRootPath && !!mapItem.fileChannelValue.length && (
-                    <Tooltip
-                      content={mapItem.status === null ? 'Syncing ...' : 'Confirm Sync'}
-                      position="bottom"
-                      tooltipClassname="text-sm"
-                    >
-                      <IconButton
-                        icon="Check"
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleSync(index)}
-                        disabled={mapItem.status === null ? true : mapItem.status}
-                        className={`${mapItem.status === null ? '' : 'cursor-pointer'}`}
-                      />
-                    </Tooltip>
-                  )}
-                  <Tooltip content="Remove" position="bottom" tooltipClassname="text-sm">
-                    <IconButton
-                      icon="Trash"
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleItemRemove(index)}
-                    />
-                  </Tooltip>
+                  <Button
+                    label={`${mapItem.status === null ? 'Syncing...' : 'Save'}`}
+                    {...(mapItem.status !== null && { prefixIcon: 'Check' })}
+                    size="sm"
+                    variant="primary"
+                    onClick={() => handleSync(index)}
+                    disabled={
+                      !mapItem.dbxRootPath ||
+                      !mapItem.fileChannelValue.length ||
+                      mapItem.status === null
+                        ? true
+                        : mapItem.status
+                    }
+                  />
+                  <Button
+                    label="Discard"
+                    prefixIcon="Close"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleItemRemove(index)}
+                    disabled={mapItem.status === null}
+                  />
                 </div>
               )}
             </td>
@@ -166,9 +157,9 @@ export const MappingTable = () => {
   const columns = [
     { title: 'File Channel', key: 'fileChannel', className: 'w-80' },
     { title: 'Dropbox Folder', key: 'dropboxFolder', className: 'w-96' },
-    { title: 'Last Updated', key: 'lastUpdated', className: 'w-[200px]' },
-    { title: 'Status', key: 'status', className: 'w-[160px]' },
-    { title: 'Actions', key: 'actions', className: 'w-[150px]' },
+    { title: 'Last Updated', key: 'lastUpdated', className: 'w-[150px]' },
+    { title: 'Status', key: 'status', className: 'w-[150px]' },
+    { title: 'Actions', key: 'actions', className: 'w-[220px]' },
   ]
 
   return (
