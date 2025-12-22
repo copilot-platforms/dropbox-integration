@@ -35,9 +35,15 @@ body {
 /* Undo preflight for specific elements.*/
 @layer base {
   /* Revert and restore styles for svg element */
-  .revert-svg svg {
-    all: revert;
-    fill: none;
+  .revert-svg {
+    & svg {
+      all: revert;
+      fill: none;
+    }
+    & .cop-stroke-current {
+      /* biome-ignore lint/complexity/noImportantStyles: override style from copilot design system */
+      stroke: unset !important;
+    }
   }
 }
 
