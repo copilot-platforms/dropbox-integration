@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import type { MapList } from '@/features/sync/types'
 import { postFetcher } from '@/helper/fetcher.helper'
+import { getFreshFolders } from '@/helper/table.helper'
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
 
 export const useTable = () => {
   const { user } = useAuthContext()
-  const { tempMapList, setUserChannel, userChannelList } = useUserChannel()
+  const { tempMapList, setUserChannel, userChannelList, folders } = useUserChannel()
   const [fileChannelIds, setFileChannelIds] = useState<{
     [key: number]: string
   }>()
@@ -58,6 +59,10 @@ export const useTable = () => {
     setUserChannel((prev) => ({
       ...prev,
       tempMapList: prev.tempMapList.filter((_, i) => i !== index),
+      tempFolders: getFreshFolders(
+        prev.tempMapList.filter((_, i) => i !== index),
+        folders,
+      ),
     }))
     setFilteredValue((prev) => ({ ...prev, [index]: null }))
   }
@@ -114,4 +119,23 @@ export const useTable = () => {
     handleItemRemove,
     handleSyncStatusChange,
   }
+}
+
+export const useUpdateUserList = () => {
+  const { userChannelList, tempMapList } = useUserChannel()
+  const selectedChannelIds = tempMapList.map((map) => map.fileChannelId)
+
+  const getNewChannelList = useCallback(() => {
+    const newClientList = userChannelList.clients?.filter(
+      (client) => client.fileChannelId && !selectedChannelIds.includes(client.fileChannelId),
+    )
+    const newCompanyList = userChannelList.companies?.filter(
+      (company) => company.fileChannelId && !selectedChannelIds.includes(company.fileChannelId),
+    )
+    const newChannelList = { clients: newClientList, companies: newCompanyList }
+
+    return newChannelList
+  }, [userChannelList, selectedChannelIds])
+
+  return { unselectedChannelList: getNewChannelList() }
 }

@@ -8,7 +8,7 @@ import { cn } from '@/components/utils'
 import LastSyncAt from '@/features/sync/components/LastSyncedAt'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
 import { useFolder } from '@/features/sync/hooks/useFolder'
-import { useTable } from '@/features/sync/hooks/useTable'
+import { useTable, useUpdateUserList } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { generateRandomString } from '@/utils/random'
 
@@ -55,8 +55,9 @@ const MappingTableRow = () => {
     filteredValue,
     onDropboxFolderChange,
   } = useTable()
-  const { tempMapList, userChannelList, syncedPercentage } = useUserChannel()
-  const { folderTree, isFolderTreeLoading } = useFolder()
+  const { unselectedChannelList } = useUpdateUserList()
+  const { isFolderTreeLoading } = useFolder()
+  const { tempMapList, userChannelList, syncedPercentage, tempFolders } = useUserChannel()
 
   if (isFolderTreeLoading) {
     return (
@@ -82,13 +83,14 @@ const MappingTableRow = () => {
                 )}
                 onChange={(val) => onUserSelectorValueChange(val, index)}
                 disabled={!!mapItem.status}
+                options={unselectedChannelList || {}}
               />
             </td>
             <td className="w-96 whitespace-nowrap px-6 py-2">
               <TreeSelect
                 value={filteredValue?.[index] || mapItem.dbxRootPath}
                 onChange={(val) => onDropboxFolderChange(val, index)}
-                options={folderTree}
+                options={tempFolders || []}
                 placeholder="Search Dropbox folder"
                 disabled={!!mapItem.status}
               />

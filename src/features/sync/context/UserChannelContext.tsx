@@ -1,13 +1,15 @@
 'use client'
 
 import { createContext, type ReactNode, useState } from 'react'
-import type { MapList, SelectorClientsCompanies } from '@/features/sync/types'
+import type { Folder, MapList, SelectorClientsCompanies } from '@/features/sync/types'
 
 export type UserChannelContextType = {
   userChannelList: SelectorClientsCompanies
   mapList: MapList[]
   tempMapList: MapList[]
   syncedPercentage?: { [key: string]: number }
+  folders?: Folder[]
+  tempFolders?: Folder[]
 }
 
 export const UserChannelContext = createContext<
@@ -29,6 +31,8 @@ export const UserChannelContextProvider = ({
     mapList,
     tempMapList,
     syncedPercentage: {},
+    folders: [],
+    tempFolders: [],
   })
 
   return (

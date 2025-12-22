@@ -1,7 +1,8 @@
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
+import { getFreshFolders } from '@/helper/table.helper'
 
 export const useSubHeader = () => {
-  const { setUserChannel, tempMapList } = useUserChannel()
+  const { setUserChannel, tempMapList, folders } = useUserChannel()
 
   const handleAddRule = () => {
     const lastMap = tempMapList?.[tempMapList.length - 1]
@@ -24,6 +25,7 @@ export const useSubHeader = () => {
             lastSyncedAt: null,
           },
         ],
+        tempFolders: getFreshFolders(tempMapList, folders),
       }))
     }
   }
