@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server'
 import { MAX_FETCH_DBX_RESOURCES, MAX_FETCH_DBX_SEARCH_LIMIT } from '@/constants/limits'
 import { ObjectType } from '@/db/constants'
 import APIError from '@/errors/APIError'
+import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type { Folder } from '@/features/sync/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import logger from '@/lib/logger'
@@ -30,7 +31,7 @@ export class DropboxService extends AuthenticatedDropboxService {
         throw new APIError('Cannot fetch the folders', searchResponse.status)
       }
 
-      return this.formatSearchResults(searchResponse.result.matches)
+      return await this.formatSearchResults(searchResponse.result.matches)
     }
 
     // Now this call will be rooted in the Team Space
@@ -47,11 +48,15 @@ export class DropboxService extends AuthenticatedDropboxService {
     }
 
     logger.info('DropboxService#getFolderTree :: Fetched folder tree', entries)
-    return this.buildFolderTree(entries)
+    return await this.buildFolderTree(entries)
   }
 
-  private buildFolderTree(entries: files.ListFolderResult['entries']): Folder[] {
+  private async buildFolderTree(entries: files.ListFolderResult['entries']): Promise<Folder[]> {
     const root: Folder[] = []
+    const mapService = new MapFilesService(this.user, this.connectionToken)
+    const mapList = (await mapService.getAllChannelMaps()).map(
+      (channelMap) => channelMap.dbxRootPath,
+    )
 
     const findOrCreate = (children: Folder[], path: string, label: string) => {
       let node = children.find((c) => c.path === path)
@@ -65,7 +70,10 @@ export class DropboxService extends AuthenticatedDropboxService {
     logger.info('DropboxService#buildFolderTree :: Building folder tree', entries)
     for (const item of entries) {
       if (item['.tag'] === ObjectType.FOLDER) {
-        const parts = item.path_display?.split('/').filter(Boolean)
+        // below condition is to make sure the map is one-to-one
+        if (!item.path_display || mapList.includes(item.path_display)) continue
+
+        const parts = item.path_display.split('/').filter(Boolean)
         let currentChildren: Folder[] = root
         let currentPath = ''
 
@@ -84,13 +92,22 @@ export class DropboxService extends AuthenticatedDropboxService {
     return root
   }
 
-  private formatSearchResults(matches: files.SearchMatchV2[]) {
+  private async formatSearchResults(matches: files.SearchMatchV2[]) {
+    const mapService = new MapFilesService(this.user, this.connectionToken)
+    const mapList = (await mapService.getAllChannelMaps()).map(
+      (channelMap) => channelMap.dbxRootPath,
+    )
+
     return matches
       .map((match) => {
         if (match.metadata['.tag'] === 'other') return null
 
         const data = match.metadata.metadata
         if (data['.tag'] !== ObjectType.FOLDER) return null
+
+        // below condition is to make sure the map is one-to-one
+        if (!data.path_display || mapList.includes(data.path_display)) return null
+
         return {
           path: data.path_display,
           label: data.path_display,

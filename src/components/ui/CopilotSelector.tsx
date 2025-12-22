@@ -1,12 +1,12 @@
 import { UserCompanySelector } from 'copilot-design-system'
-import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
-import type { SelectorValue } from '@/features/sync/types'
+import type { SelectorClientsCompanies, SelectorValue } from '@/features/sync/types'
 import type { UserCompanySelectorInputValue } from '@/lib/copilot/types'
 
 type CopilotSelectorProps = {
   name: string
   initialValue?: SelectorValue[]
   onChange: (val: UserCompanySelectorInputValue[]) => void
+  options: SelectorClientsCompanies
   disabled?: boolean
 }
 
@@ -15,9 +15,8 @@ export const CopilotSelector = ({
   initialValue,
   onChange,
   disabled,
+  options,
 }: CopilotSelectorProps) => {
-  const { userChannelList } = useUserChannel()
-
   if (typeof window !== 'undefined')
     return (
       <div className="w-64">
@@ -25,8 +24,8 @@ export const CopilotSelector = ({
           name={name}
           initialValue={initialValue}
           placeholder="Select File Channel"
-          clientUsers={userChannelList.clients ?? []}
-          companies={userChannelList.companies ?? []}
+          clientUsers={options.clients ?? []}
+          companies={options.companies ?? []}
           grouped={true}
           limitSelectedOptions={1}
           onChange={onChange}

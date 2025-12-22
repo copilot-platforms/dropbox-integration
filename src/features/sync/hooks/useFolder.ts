@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
-import type { Folder } from '@/features/sync/types'
+import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 
 export const useFolder = () => {
   const { user, connectionStatus } = useAuthContext()
-  const [folderTree, setFolderTree] = useState<Folder[]>([])
+  const { setUserChannel } = useUserChannel()
   const [isFolderTreeLoading, setIsFolderTreeLoading] = useState(true)
 
   const getPathOptions = useCallback(async () => {
@@ -21,14 +21,14 @@ export const useFolder = () => {
       },
     })
     const resp = await response.json()
-    setFolderTree(resp.folders)
+    setUserChannel((prev) => ({ ...prev, folders: resp.folders, tempFolders: resp.folders }))
     setIsFolderTreeLoading(false)
-  }, [user.token, connectionStatus])
+  }, [user.token, connectionStatus, setUserChannel])
 
   useEffect(() => {
     // biome-ignore lint/nursery/noFloatingPromises: floating promises are fine here
     getPathOptions()
   }, [getPathOptions])
 
-  return { folderTree, isFolderTreeLoading }
+  return { isFolderTreeLoading }
 }
