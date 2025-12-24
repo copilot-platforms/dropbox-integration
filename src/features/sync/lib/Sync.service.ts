@@ -457,4 +457,8 @@ export class SyncService extends AuthenticatedDropboxService {
     )
     throw new Error('File not found')
   }
+
+  async removeChannelSyncMapping(channelSyncId: string) {
+    await this.mapFilesService.deleteChannelMapById(channelSyncId)
+  }
 }

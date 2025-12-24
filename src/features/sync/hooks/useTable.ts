@@ -2,8 +2,9 @@ import { useCallback, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import type { MapList } from '@/features/sync/types'
-import { postFetcher } from '@/helper/fetcher.helper'
+import { deleteFetcher, postFetcher } from '@/helper/fetcher.helper'
 import { getFreshFolders } from '@/helper/table.helper'
+
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
 
 export const useTable = () => {
@@ -138,4 +139,49 @@ export const useUpdateUserList = () => {
   }, [userChannelList, selectedChannelIds])
 
   return { unselectedChannelList: getNewChannelList() }
+}
+
+export const useRemoveChannelSync = () => {
+  const { user } = useAuthContext()
+  const { setUserChannel } = useUserChannel()
+
+  const [openDialog, setOpenDialog] = useState(false)
+  const [removeId, setRemoveId] = useState<string | undefined>()
+
+  const removeChannelSync = async () => {
+    setUserChannel((prev) => ({
+      ...prev,
+      tempMapList: prev.tempMapList.filter((item) => item.id !== removeId),
+    }))
+    try {
+      await deleteFetcher(
+        `/api/sync/remove?token=${user.token}`,
+        {},
+        {
+          body: JSON.stringify({
+            channelSyncId: removeId,
+          }),
+        },
+      )
+    } catch (error: unknown) {
+      console.error(error)
+    }
+  }
+
+  const handleRemoveSync = async () => {
+    setOpenDialog(false)
+    await removeChannelSync()
+  }
+
+  const openConfirmDialog = (id?: string) => {
+    setOpenDialog(true)
+    setRemoveId(id)
+  }
+
+  return {
+    handleRemoveSync,
+    setOpenDialog,
+    openDialog,
+    openConfirmDialog,
+  }
 }

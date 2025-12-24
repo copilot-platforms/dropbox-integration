@@ -12,3 +12,18 @@ export const postFetcher = async (
     ...options,
   })
 }
+
+export const deleteFetcher = async (
+  url: string,
+  headers: Record<string, string>,
+  options: Record<string, string>,
+) => {
+  return await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    ...options,
+  })
+}
