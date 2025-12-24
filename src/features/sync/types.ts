@@ -130,3 +130,7 @@ export const UpdateConnectionStatusSchema = z.object({
   assemblyChannelId: z.string().min(1),
   dbxRootPath: z.string().min(1),
 })
+
+export const RemoveChannelSyncSchema = z.object({
+  channelSyncId: z.string(),
+})

@@ -3,12 +3,13 @@
 import { Button } from 'copilot-design-system'
 import { Loader } from '@/components/layouts/Loader'
 import { CopilotSelector } from '@/components/ui/CopilotSelector'
+import { Dialog } from '@/components/ui/dialog/Dialog'
 import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/components/utils'
 import LastSyncAt from '@/features/sync/components/LastSyncedAt'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
 import { useFolder } from '@/features/sync/hooks/useFolder'
-import { useTable, useUpdateUserList } from '@/features/sync/hooks/useTable'
+import { useRemoveChannelSync, useTable, useUpdateUserList } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { generateRandomString } from '@/utils/random'
 
@@ -46,7 +47,7 @@ const MappingTableNoRecords = () => {
   )
 }
 
-const MappingTableRow = () => {
+const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: string) => void }) => {
   const {
     handleSyncStatusChange,
     handleItemRemove,
@@ -110,15 +111,24 @@ const MappingTableRow = () => {
                 />
               </div>
             </td>
-            <td className="revert-svg w-[220px] whitespace-nowrap px-6 py-2">
+            <td className="revert-svg w-64 whitespace-nowrap px-6 py-2">
               {mapItem.id && mapItem.status !== null ? (
-                <Button
-                  label={`${mapItem.status ? 'Disconnect' : 'Enable'}`}
-                  prefixIcon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleSyncStatusChange(index)}
-                />
+                <div className="flex items-center gap-3">
+                  <Button
+                    label={`${mapItem.status ? 'Disconnect' : 'Enable'}`}
+                    prefixIcon={`${mapItem.status ? 'Disconnect' : 'Repeat'}`}
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleSyncStatusChange(index)}
+                  />
+                  <Button
+                    label="Remove"
+                    prefixIcon="Trash"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => openConfirmDialog(mapItem.id)}
+                  />
+                </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <Button
@@ -161,33 +171,43 @@ export const MappingTable = () => {
     { title: 'Dropbox Folder', key: 'dropboxFolder', className: 'w-96' },
     { title: 'Last Updated', key: 'lastUpdated', className: 'w-[150px]' },
     { title: 'Status', key: 'status', className: 'w-[150px]' },
-    { title: 'Actions', key: 'actions', className: 'w-[220px]' },
+    { title: 'Actions', key: 'actions', className: 'w-64' },
   ]
+
+  const { openDialog, setOpenDialog, handleRemoveSync, openConfirmDialog } = useRemoveChannelSync()
 
   return (
     <div className="m-10 mt-0 border border-gray-200 bg-white">
-      <div className="">
-        <table className="w-full">
-          <thead className="border-gray-200 border-b bg-gray-50">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={cn(
-                    'px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase',
-                    column.className,
-                  )}
-                >
-                  {column.title}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            <MappingTableRow />
-          </tbody>
-        </table>
-      </div>
+      <table className="w-full">
+        <thead className="border-gray-200 border-b bg-gray-50">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                className={cn(
+                  'px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase',
+                  column.className,
+                )}
+              >
+                {column.title}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200 bg-white">
+          <MappingTableRow openConfirmDialog={openConfirmDialog} />
+        </tbody>
+      </table>
+      {openDialog && (
+        <Dialog
+          open={openDialog}
+          setOpen={setOpenDialog}
+          title="Remove channel sync"
+          description="Are you sure you want to remove this channel sync?"
+          cancel={() => setOpenDialog(false)}
+          confirm={() => handleRemoveSync()}
+        />
+      )}
     </div>
   )
 }
