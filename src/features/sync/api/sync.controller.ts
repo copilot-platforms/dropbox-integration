@@ -1,4 +1,6 @@
+import httpStatus from 'http-status'
 import { type NextRequest, NextResponse } from 'next/server'
+import APIError from '@/errors/APIError'
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import { SyncService } from '@/features/sync/lib/Sync.service'
@@ -47,8 +49,8 @@ export const updateSyncStatus = async (req: NextRequest) => {
   const dbxService = new DropboxConnectionsService(user)
   const connection = await dbxService.getConnectionForWorkspace()
 
-  if (!connection.refreshToken) throw new Error('No refresh token found')
-  if (!connection.accountId) throw new Error('No accountId found')
+  if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.BAD_REQUEST)
+  if (!connection.accountId) throw new APIError('No accountId found', httpStatus.BAD_REQUEST)
 
   const mapService = new MapFilesService(user, {
     refreshToken: connection.refreshToken,
@@ -76,8 +78,8 @@ export const removeChannelSyncMapping = async (req: NextRequest) => {
   const dbxService = new DropboxConnectionsService(user)
   const connection = await dbxService.getConnectionForWorkspace()
 
-  if (!connection.refreshToken) throw new Error('No refresh token found')
-  if (!connection.accountId) throw new Error('No accountId found')
+  if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.BAD_REQUEST)
+  if (!connection.accountId) throw new APIError('No accountId found', httpStatus.BAD_REQUEST)
 
   const syncService = new SyncService(user, {
     refreshToken: connection.refreshToken,
