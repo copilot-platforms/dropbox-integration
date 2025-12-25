@@ -19,7 +19,7 @@ export const CopilotSelector = ({
 }: CopilotSelectorProps) => {
   if (typeof window !== 'undefined')
     return (
-      // Note: to fix the UI responsive completely, need to create a custom react portal and wrap this component with it.
+      // Note: if in case the UI responsive issue does not work in the future, need to create a custom react portal and wrap this component with it.
       // Since we are using the same input field given by this selector component for now, need to create a separate input field for this implementation
       <div className="w-64">
         <UserCompanySelector
