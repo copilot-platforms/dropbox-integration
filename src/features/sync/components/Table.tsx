@@ -104,7 +104,7 @@ const MappingTableRow = () => {
               <div className="flex items-center gap-2">
                 <MappingTableStatus
                   status={mapItem.status}
-                  percentage={syncedPercentage?.[index] || mapItem.syncedPercentage || 0}
+                  percentage={syncedPercentage?.[index] ?? mapItem.syncedPercentage ?? 0}
                 />
               </div>
             </td>
