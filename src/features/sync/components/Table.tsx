@@ -178,9 +178,9 @@ export const MappingTable = () => {
 
   return (
     <div className="m-10 mt-0 min-h-0 flex-1 overflow-x-auto">
-      <div className="h-full border border-gray-200 bg-white">
+      <div className="h-full w-full">
         <table className="w-full">
-          <thead className="border-gray-200 border-b bg-gray-50">
+          <thead className="border border-gray-200 bg-gray-50">
             <tr>
               {columns.map((column) => (
                 <th
@@ -195,7 +195,7 @@ export const MappingTable = () => {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 border border-gray-200 bg-white">
             <MappingTableRow openConfirmDialog={openConfirmDialog} />
           </tbody>
         </table>
