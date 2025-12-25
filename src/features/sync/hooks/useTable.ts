@@ -143,16 +143,18 @@ export const useUpdateUserList = () => {
 
 export const useRemoveChannelSync = () => {
   const { user } = useAuthContext()
-  const { setUserChannel } = useUserChannel()
+  const { setUserChannel, tempMapList } = useUserChannel()
 
   const [openDialog, setOpenDialog] = useState(false)
   const [removeId, setRemoveId] = useState<string | undefined>()
 
   const removeChannelSync = async () => {
+    const localMapList = tempMapList
     setUserChannel((prev) => ({
       ...prev,
       tempMapList: prev.tempMapList.filter((item) => item.id !== removeId),
     }))
+
     try {
       await deleteFetcher(
         `/api/sync/remove?token=${user.token}`,
@@ -164,6 +166,10 @@ export const useRemoveChannelSync = () => {
         },
       )
     } catch (error: unknown) {
+      setUserChannel((prev) => ({
+        ...prev,
+        tempMapList: localMapList,
+      }))
       console.error(error)
     }
   }
