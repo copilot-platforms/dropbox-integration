@@ -177,27 +177,29 @@ export const MappingTable = () => {
   const { openDialog, setOpenDialog, handleRemoveSync, openConfirmDialog } = useRemoveChannelSync()
 
   return (
-    <div className="m-10 mt-0 border border-gray-200 bg-white">
-      <table className="w-full">
-        <thead className="border-gray-200 border-b bg-gray-50">
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className={cn(
-                  'px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase',
-                  column.className,
-                )}
-              >
-                {column.title}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          <MappingTableRow openConfirmDialog={openConfirmDialog} />
-        </tbody>
-      </table>
+    <div className="m-10 mt-0 min-h-0 flex-1 overflow-x-auto">
+      <div className="h-full border border-gray-200 bg-white">
+        <table className="w-full">
+          <thead className="border-gray-200 border-b bg-gray-50">
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className={cn(
+                    'px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase',
+                    column.className,
+                  )}
+                >
+                  {column.title}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            <MappingTableRow openConfirmDialog={openConfirmDialog} />
+          </tbody>
+        </table>
+      </div>
       {openDialog && (
         <Dialog
           open={openDialog}
