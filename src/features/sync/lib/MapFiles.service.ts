@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import httpStatus from 'http-status'
 import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import z from 'zod'
@@ -16,6 +16,7 @@ import {
   type FileSyncUpdatePayload,
   fileFolderSync,
 } from '@/db/schema/fileFolderSync.schema'
+import APIError from '@/errors/APIError'
 import type {
   DropboxFileListFolderResultEntries,
   MapList,
@@ -189,7 +190,11 @@ export class MapFilesService extends AuthenticatedDropboxService {
       .where(
         and(
           eq(channelSync.portalId, this.user.portalId),
-          eq(channelSync.assemblyChannelId, payload.assemblyChannelId),
+          or(
+            eq(channelSync.assemblyChannelId, payload.assemblyChannelId),
+            eq(channelSync.dbxRootPath, payload.dbxRootPath),
+          ),
+          isNull(channelSync.deletedAt),
         ),
       )
     logger.info('MapFilesService#getOrCreateChannelMap :: Got channel map', channel)
@@ -200,6 +205,15 @@ export class MapFilesService extends AuthenticatedDropboxService {
         .returning()
       channel = newChannel[0]
       logger.info('MapFilesService#getOrCreateChannelMap :: Created channel map', channel)
+    } else {
+      if (
+        channel.assemblyChannelId !== payload.assemblyChannelId ||
+        channel.dbxRootPath !== payload.dbxRootPath
+      )
+        throw new APIError(
+          'Mapping already exists for the given file channel or dropbox folder',
+          httpStatus.BAD_REQUEST,
+        )
     }
 
     return channel
