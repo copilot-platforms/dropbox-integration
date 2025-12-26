@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import type { MapList } from '@/features/sync/types'
-import { deleteFetcher, postFetcher } from '@/helper/fetcher.helper'
+import { customFetcher } from '@/helper/fetcher.helper'
 import { getFreshFolders } from '@/helper/table.helper'
 
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
@@ -76,7 +76,8 @@ export const useTable = () => {
     updateTempMapListState(index, { status: null })
 
     try {
-      await postFetcher(
+      await customFetcher(
+        'POST',
         `/api/sync?token=${user.token}`,
         {},
         {
@@ -99,7 +100,8 @@ export const useTable = () => {
     updateTempMapListState(index, { status: !tempMapList[index].status })
 
     try {
-      await postFetcher(
+      await customFetcher(
+        'POST',
         `/api/sync/update-status?token=${user.token}`,
         {},
         {
@@ -156,7 +158,8 @@ export const useRemoveChannelSync = () => {
     }))
 
     try {
-      await deleteFetcher(
+      await customFetcher(
+        'DELETE',
         `/api/sync/remove?token=${user.token}`,
         {},
         {
