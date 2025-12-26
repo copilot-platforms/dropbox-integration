@@ -3,7 +3,7 @@ export const postFetcher = async (
   headers: Record<string, string>,
   options: Record<string, string>,
 ) => {
-  return await fetch(url, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -11,6 +11,10 @@ export const postFetcher = async (
     },
     ...options,
   })
+  if (!response.ok) {
+    throw new Error('Failed to post data')
+  }
+  return response
 }
 
 export const deleteFetcher = async (
@@ -18,7 +22,7 @@ export const deleteFetcher = async (
   headers: Record<string, string>,
   options: Record<string, string>,
 ) => {
-  return await fetch(url, {
+  const response = await fetch(url, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -26,4 +30,8 @@ export const deleteFetcher = async (
     },
     ...options,
   })
+  if (!response.ok) {
+    throw new Error('Failed to delete data')
+  }
+  return response
 }

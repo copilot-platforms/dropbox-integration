@@ -83,7 +83,7 @@ const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: strin
                   mapItem.fileChannelValue?.[0],
                 )}
                 onChange={(val) => onUserSelectorValueChange(val, index)}
-                disabled={!!mapItem.status}
+                disabled={!!mapItem?.id || mapItem.status === null}
                 options={unselectedChannelList || {}}
               />
             </td>
@@ -93,7 +93,7 @@ const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: strin
                 onChange={(val) => onDropboxFolderChange(val, index)}
                 options={tempFolders || []}
                 placeholder="Search Dropbox folder"
-                disabled={!!mapItem.status}
+                disabled={!!mapItem?.id || mapItem.status === null}
               />
             </td>
             <td className="w-[150px] whitespace-nowrap px-6 py-2 text-gray-500 text-sm">
