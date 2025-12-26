@@ -1,10 +1,11 @@
-export const postFetcher = async (
+export const customFetcher = async (
+  method: 'GET' | 'POST' | 'DELETE' | 'PUT',
   url: string,
   headers: Record<string, string>,
   options: Record<string, string>,
 ) => {
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers: {
       'Content-Type': 'application/json',
       ...headers,
@@ -12,26 +13,7 @@ export const postFetcher = async (
     ...options,
   })
   if (!response.ok) {
-    throw new Error('Failed to post data')
-  }
-  return response
-}
-
-export const deleteFetcher = async (
-  url: string,
-  headers: Record<string, string>,
-  options: Record<string, string>,
-) => {
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    ...options,
-  })
-  if (!response.ok) {
-    throw new Error('Failed to delete data')
+    throw new Error(`Fetch failed with status code: ${response.status}`)
   }
   return response
 }
