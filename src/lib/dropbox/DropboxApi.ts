@@ -3,6 +3,7 @@ import httpStatus from 'http-status'
 import { camelKeys } from 'js-convert-case'
 import fetch from 'node-fetch'
 import env from '@/config/server.env'
+import { DropboxClientType, type DropboxClientTypeValue } from '@/db/constants'
 import {
   DropboxAuthResponseSchema,
   type DropboxAuthResponseType,
@@ -52,7 +53,11 @@ export class DropboxApi {
    * @returns instance of Dropbox client
    * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
-  getDropboxClient(refreshToken: string, rootNamespaceId?: string | null): Dropbox {
+  getDropboxClient(
+    refreshToken: string,
+    rootNamespaceId?: string | null,
+    type: DropboxClientTypeValue = DropboxClientType.ROOT,
+  ): Dropbox {
     this.refreshAccessToken(refreshToken)
 
     const options: { auth: DropboxAuth; pathRoot?: string } = { auth: this.dropboxAuth }
@@ -60,8 +65,8 @@ export class DropboxApi {
     // If we have a root namespace, set the header
     if (rootNamespaceId) {
       options.pathRoot = JSON.stringify({
-        '.tag': 'root',
-        root: rootNamespaceId,
+        '.tag': type,
+        [type]: rootNamespaceId,
       })
     }
 

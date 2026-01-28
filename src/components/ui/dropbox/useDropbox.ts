@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TreeSelectNode } from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
+import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
+import type { Folder } from '@/features/sync/types'
 
 type UseTreeSelectProps = {
   options: TreeSelectNode[]
@@ -32,6 +34,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
   const { user } = useAuthContext()
   const debouncedQuery = useDebounce(filterValue)
   const [isSearching, setIsSearching] = useState(false)
+  const { tempMapList } = useUserChannel()
 
   // Handle click outside
   useEffect(() => {
@@ -67,20 +70,20 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
     setFilterValue(null)
   }
 
-  const flattenTree = (nodes: TreeSelectNode[]): TreeSelectNode[] => {
-    const flattenedNodes: TreeSelectNode[] = []
-    for (const node of nodes) {
-      const cloneNode = structuredClone(node)
-      delete cloneNode.children
-      flattenedNodes.push(cloneNode)
-      if (node.children?.length) {
-        flattenedNodes.push(...flattenTree(node.children))
+  const disabledSyncedFolders = (folders: Folder[]) => {
+    const mappedPaths = tempMapList.map((item) => item.dbxRootPath)
+    return folders.map((folder) => {
+      if (mappedPaths.includes(folder.path)) {
+        return {
+          ...folder,
+          disabled: true,
+        }
       }
-    }
-
-    return flattenedNodes
+      return folder
+    })
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: aoid disabledSyncedFolders as dependency
   const searchFolderInDropbox = useCallback(async () => {
     if (!debouncedQuery) return
 
@@ -95,7 +98,11 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
       },
     )
     const resp = await response.json()
-    setDisplayNodes(resp.folders || [])
+    const folders: Folder[] = resp.folders || []
+
+    // disable the mapped folders
+    const updatedFolders = disabledSyncedFolders(folders)
+    setDisplayNodes(updatedFolders)
     setIsOpen(true)
     setIsSearching(false)
   }, [filterValue, user.token, debouncedQuery])
@@ -106,22 +113,22 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
       return
     }
 
-    const flatTree = flattenTree(options)
+    // const flatTree = flattenTree(options)
 
-    const result = flatTree
-      .filter((node) => {
-        return node.label.toLowerCase().includes(filterValue.toLowerCase())
-      })
-      .map((node) => ({
-        ...node,
-        label: node.path,
-      }))
-    if (result.length === 0) {
-      // only trigger server filtering if there are no results
-      await searchFolderInDropbox()
-      return
-    }
-    setDisplayNodes(result)
+    // const result = flatTree
+    //   .filter((node) => {
+    //     return node.label.toLowerCase().includes(filterValue.toLowerCase())
+    //   })
+    //   .map((node) => ({
+    //     ...node,
+    //     label: node.path,
+    //   }))
+    // if (result.length === 0) {
+    // // only trigger server filtering if there are no results
+    await searchFolderInDropbox()
+    return
+    // }
+    // setDisplayNodes(result)
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: avoid filterNodes as dependency as it causes infinite loop

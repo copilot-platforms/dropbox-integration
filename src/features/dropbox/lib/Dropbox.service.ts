@@ -1,8 +1,9 @@
-import type { files } from 'dropbox'
+import type { Dropbox, files } from 'dropbox'
 import httpStatus from 'http-status'
 import type { NextRequest } from 'next/server'
+import z from 'zod'
 import { MAX_FETCH_DBX_RESOURCES, MAX_FETCH_DBX_SEARCH_LIMIT } from '@/constants/limits'
-import { ObjectType } from '@/db/constants'
+import { DropboxClientType, ObjectType } from '@/db/constants'
 import APIError from '@/errors/APIError'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type { Folder } from '@/features/sync/types'
@@ -19,25 +20,26 @@ export class DropboxService extends AuthenticatedDropboxService {
       this.connectionToken.rootNamespaceId,
     )
 
-    if (search) {
-      logger.info('DropboxService#getFolderTree :: Searching folder in Dropbox... Query: ', search)
-      const searchResponse = await dbxClient.filesSearchV2({
-        query: search,
-        options: {
-          max_results: MAX_FETCH_DBX_SEARCH_LIMIT,
-        },
-      })
-      if (searchResponse.status !== httpStatus.OK) {
-        throw new APIError('Cannot fetch the folders', searchResponse.status)
-      }
-
-      return await this.formatSearchResults(searchResponse.result.matches)
-    }
+    if (search) return await this.searchForFolder({ dbxClient, search })
 
     // Now this call will be rooted in the Team Space
+    const entries = await this.getFileEntriesFromDropbox({ dbxClient })
+
+    logger.info('DropboxService#getFolderTree :: Fetched folder tree', entries)
+    return this.buildFolderTree(entries)
+  }
+
+  private async getFileEntriesFromDropbox({
+    dbxClient,
+    recursive = false,
+  }: {
+    dbxClient: Dropbox
+    path?: string
+    recursive?: boolean
+  }) {
     const dbxResponse = await dbxClient.filesListFolder({
       path: '', // "" is now the Team Space root, not the Member Folder
-      recursive: false,
+      recursive,
       limit: MAX_FETCH_DBX_RESOURCES,
       include_non_downloadable_files: false,
     })
@@ -46,9 +48,54 @@ export class DropboxService extends AuthenticatedDropboxService {
     if (dbxResponse.status !== httpStatus.OK) {
       throw new APIError('Cannot fetch the folders', dbxResponse.status)
     }
+    return entries
+  }
 
-    logger.info('DropboxService#getFolderTree :: Fetched folder tree', entries)
-    return await this.buildFolderTree(entries)
+  /**
+   * Description: This function first searches for the term using filesSearchV2. This returns the exact folder.
+   * To get the subfolder of the result folder, we use filesListFolder with the namespace_id of the result folder.
+   */
+  async searchForFolder({ dbxClient, search }: { dbxClient: Dropbox; search: string }) {
+    logger.info('DropboxService#getFolderTree :: Searching folder in Dropbox... Query: ', search)
+    const searchResponse = await dbxClient.filesSearchV2({
+      query: search,
+      options: {
+        max_results: MAX_FETCH_DBX_SEARCH_LIMIT,
+      },
+    })
+
+    if (searchResponse.status !== httpStatus.OK) {
+      throw new APIError('Cannot fetch the folders', searchResponse.status)
+    }
+
+    const { folders, pathArray } = this.formatSearchResults(searchResponse.result.matches)
+
+    if (!pathArray.length) return folders
+
+    const formattedFolders: Folder[] = []
+    const folderPromise = pathArray.map(async (path) => {
+      const filesMetadata = await dbxClient.filesGetMetadata({
+        path,
+      })
+      const folderResult = filesMetadata.result
+
+      if (folderResult['.tag'] === ObjectType.FOLDER) {
+        const tempDbxClient = this.dbxApi.getDropboxClient(
+          this.connectionToken.refreshToken,
+          folderResult.shared_folder_id,
+          DropboxClientType.NAMESPACE_ID,
+        )
+        const entries = await this.getFileEntriesFromDropbox({
+          dbxClient: tempDbxClient,
+          recursive: true,
+        })
+        formattedFolders.push(...this.formatSubFolders(entries, path))
+      }
+    })
+    await Promise.all(folderPromise)
+
+    // return unique array
+    return [...new Map([...folders, ...formattedFolders].map((item) => [item.path, item])).values()]
   }
 
   private async buildFolderTree(entries: files.ListFolderResult['entries']): Promise<Folder[]> {
@@ -92,22 +139,31 @@ export class DropboxService extends AuthenticatedDropboxService {
     return root
   }
 
-  private async formatSearchResults(matches: files.SearchMatchV2[]) {
-    const mapService = new MapFilesService(this.user, this.connectionToken)
-    const mapList = (await mapService.getAllChannelMaps()).map(
-      (channelMap) => channelMap.dbxRootPath,
-    )
+  private formatSubFolders(folders: files.ListFolderResult['entries'], rootPath: string) {
+    return folders
+      .map((folder) => {
+        if (folder['.tag'] === ObjectType.FOLDER) {
+          return {
+            path: `${rootPath}${folder.path_display}`,
+            label: `${rootPath}${folder.path_display}`,
+            children: [],
+          }
+        }
+        return null
+      })
+      .filter((item) => item !== null)
+  }
 
-    return matches
+  private formatSearchResults(matches: files.SearchMatchV2[]) {
+    const pathArray: string[] = []
+    const folders = matches
       .map((match) => {
         if (match.metadata['.tag'] === 'other') return null
 
         const data = match.metadata.metadata
         if (data['.tag'] !== ObjectType.FOLDER) return null
 
-        // below condition is to make sure the map is one-to-one
-        if (!data.path_display || mapList.includes(data.path_display)) return null
-
+        pathArray.push(z.string().parse(data.path_display))
         return {
           path: data.path_display,
           label: data.path_display,
@@ -115,5 +171,7 @@ export class DropboxService extends AuthenticatedDropboxService {
         }
       })
       .filter((item) => item !== null)
+
+    return { folders, pathArray }
   }
 }
