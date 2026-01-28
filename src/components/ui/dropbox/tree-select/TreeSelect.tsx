@@ -130,13 +130,13 @@ export default function TreeSelect({
           )}
         >
           <div className="p-2 shadow-lg">
-            {displayNodes.length === 0 ? (
-              <div className="px-2 py-4 text-center text-muted-foreground text-sm">
-                No items found
-              </div>
-            ) : isSearching ? (
+            {isSearching ? (
               <div className="flex items-center justify-center">
                 <Loader size={5} />
+              </div>
+            ) : displayNodes.length === 0 ? (
+              <div className="px-2 py-4 text-center text-muted-foreground text-sm">
+                No items found
               </div>
             ) : (
               displayNodes.map((node) => (
