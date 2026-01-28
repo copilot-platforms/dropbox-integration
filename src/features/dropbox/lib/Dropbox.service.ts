@@ -31,6 +31,7 @@ export class DropboxService extends AuthenticatedDropboxService {
 
   private async getFileEntriesFromDropbox({
     dbxClient,
+    path = '',
     recursive = false,
   }: {
     dbxClient: Dropbox
@@ -38,7 +39,7 @@ export class DropboxService extends AuthenticatedDropboxService {
     recursive?: boolean
   }) {
     const dbxResponse = await dbxClient.filesListFolder({
-      path: '', // "" is now the Team Space root, not the Member Folder
+      path, // "" is now the Team Space root, not the Member Folder
       recursive,
       limit: MAX_FETCH_DBX_RESOURCES,
       include_non_downloadable_files: false,
@@ -49,6 +50,31 @@ export class DropboxService extends AuthenticatedDropboxService {
       throw new APIError('Cannot fetch the folders', dbxResponse.status)
     }
     return entries
+  }
+
+  private async searchChildrenFolders(
+    folderResult: files.FolderMetadataReference,
+    path: string,
+    dbxClient: Dropbox,
+  ) {
+    const isSharedFolder = !!folderResult.shared_folder_id
+    const prefixPath = isSharedFolder ? path : undefined
+
+    // this step makes sure the team folder
+    const tempDbxClient = isSharedFolder
+      ? this.dbxApi.getDropboxClient(
+          this.connectionToken.refreshToken,
+          folderResult.shared_folder_id,
+          DropboxClientType.NAMESPACE_ID,
+        )
+      : dbxClient
+
+    const entries = await this.getFileEntriesFromDropbox({
+      dbxClient: tempDbxClient,
+      recursive: true,
+      ...(!isSharedFolder && { path: folderResult.path_display }),
+    })
+    return this.formatSubFolders(entries, prefixPath)
   }
 
   /**
@@ -80,16 +106,8 @@ export class DropboxService extends AuthenticatedDropboxService {
       const folderResult = filesMetadata.result
 
       if (folderResult['.tag'] === ObjectType.FOLDER) {
-        const tempDbxClient = this.dbxApi.getDropboxClient(
-          this.connectionToken.refreshToken,
-          folderResult.shared_folder_id,
-          DropboxClientType.NAMESPACE_ID,
-        )
-        const entries = await this.getFileEntriesFromDropbox({
-          dbxClient: tempDbxClient,
-          recursive: true,
-        })
-        formattedFolders.push(...this.formatSubFolders(entries, path))
+        const childFolders = await this.searchChildrenFolders(folderResult, path, dbxClient)
+        formattedFolders.push(...childFolders)
       }
     })
     await Promise.all(folderPromise)
@@ -139,13 +157,15 @@ export class DropboxService extends AuthenticatedDropboxService {
     return root
   }
 
-  private formatSubFolders(folders: files.ListFolderResult['entries'], rootPath: string) {
+  private formatSubFolders(folders: files.ListFolderResult['entries'], rootPath?: string) {
     return folders
       .map((folder) => {
         if (folder['.tag'] === ObjectType.FOLDER) {
+          const newPath = rootPath ? `${rootPath}${folder.path_display}` : folder.path_display
+          const parsedPath = z.string().parse(newPath)
           return {
-            path: `${rootPath}${folder.path_display}`,
-            label: `${rootPath}${folder.path_display}`,
+            path: parsedPath,
+            label: parsedPath,
             children: [],
           }
         }
