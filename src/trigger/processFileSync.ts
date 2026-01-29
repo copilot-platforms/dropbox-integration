@@ -1,6 +1,7 @@
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { and, eq, isNotNull } from 'drizzle-orm'
 import z from 'zod'
+import env from '@/config/server.env'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { fileFolderSync } from '@/db/schema/fileFolderSync.schema'
 import { MAX_FILES_LIMIT } from '@/features/sync/constant'
@@ -35,8 +36,11 @@ type HandleChannelFilePayload = {
   connectionToken: DropboxConnectionTokens
 }
 
+const machine = env.TRIGGER_MACHINE
+
 export const processDropboxChanges = task({
   id: 'process-dropbox-changes',
+  machine,
   queue: {
     name: 'process-dropbox-changes',
     concurrencyLimit: 1,
@@ -52,6 +56,7 @@ export const processDropboxChanges = task({
 
 export const bidirectionalMasterSync = task({
   id: 'bidirectional-master-sync',
+  machine,
   run: async (payload: SyncTaskPayload) => {
     try {
       await initiateAssemblyToDropboxSync.triggerAndWait(payload)
@@ -65,6 +70,7 @@ export const bidirectionalMasterSync = task({
 
 export const initiateDropboxToAssemblySync = task({
   id: 'initiate-dropbox-to-assembly-sync',
+  machine,
   run: async (payload: SyncTaskPayload) => {
     logger.info(
       'processFileSync#initiateDropboxToAssemblySync. Syncing files from Dropbox to Assembly',
@@ -140,7 +146,7 @@ export const initiateDropboxToAssemblySync = task({
 
 export const syncDropboxFileToAssembly = task({
   id: 'sync-dropbox-file-to-assembly',
-  machine: 'micro',
+  machine,
   queue: {
     name: 'sync-dropbox-file-to-assembly',
     concurrencyLimit: 25,
@@ -160,6 +166,7 @@ export const syncDropboxFileToAssembly = task({
 
 export const handleChannelFileChanges = task({
   id: 'handle-channel-file-changes',
+  machine,
   queue: {
     name: 'handle-channel-file-changes',
     concurrencyLimit: 1,
@@ -296,6 +303,7 @@ export const updateDropboxFileInAssembly = task({
 
 export const initiateAssemblyToDropboxSync = task({
   id: 'initiate-assembly-to-dropbox-sync',
+  machine,
   run: async (payload: SyncTaskPayload) => {
     logger.info(
       'processFileSync#initiateAssemblyToDropboxSync. Syncing files from Assembly to Dropbox',
@@ -335,7 +343,7 @@ export const initiateAssemblyToDropboxSync = task({
 
 export const syncAssemblyFileToDropbox = task({
   id: 'sync-assembly-file-to-dropbox',
-  machine: 'micro',
+  machine,
   queue: {
     name: 'sync-assembly-file-to-dropbox',
     concurrencyLimit: 25,
