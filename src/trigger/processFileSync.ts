@@ -16,7 +16,8 @@ import {
 import { DropboxWebhook } from '@/features/webhook/dropbox/lib/webhook.service'
 import { CopilotAPI } from '@/lib/copilot/CopilotAPI'
 import type User from '@/lib/copilot/models/User.model'
-import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import { DropboxAuthClient } from '@/lib/dropbox/DropboxAuthClient'
+import { DropboxClient } from '@/lib/dropbox/DropboxClient'
 import { withErrorLogging } from '@/utils/withErrorLogger'
 
 type SyncTaskPayload = {
@@ -73,11 +74,10 @@ export const initiateDropboxToAssemblySync = task({
     const mapFilesService = new MapFilesService(user, connectionToken)
 
     // 1. get all the files folder from dropbox
-    const dbxApi = new DropboxApi()
-    const dbxClient = dbxApi.getDropboxClient(
+    const dbxClient = new DropboxClient(
       connectionToken.refreshToken,
       connectionToken.rootNamespaceId,
-    )
+    ).getDropboxClient()
 
     let dbxFiles = await dbxClient.filesListFolder({
       path: dbxRootPath,
@@ -305,8 +305,8 @@ export const initiateAssemblyToDropboxSync = task({
     const mapFilesService = new MapFilesService(user, connectionToken)
 
     // refresh dropbox access token
-    const dbxApi = new DropboxApi()
-    dbxApi.refreshAccessToken(connectionToken.refreshToken)
+    const dbxAuth = new DropboxAuthClient()
+    dbxAuth.refreshAccessToken(connectionToken.refreshToken)
 
     // 1. get al the files from the assembly
     const copilotApi = new CopilotAPI(payload.user.token)

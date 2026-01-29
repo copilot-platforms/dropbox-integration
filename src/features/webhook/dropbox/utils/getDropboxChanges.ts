@@ -1,20 +1,16 @@
+import type { Dropbox } from 'dropbox'
 import type { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import { DropboxFileListFolderResultEntriesSchema } from '@/features/sync/types'
-import type { DropboxApi } from '@/lib/dropbox/DropboxApi'
 
 export async function getDropboxChanges(
-  refreshToken: string,
-  rootNamespaceId: string | null,
   cursor: string,
   rootPath: string,
-  dbxApi: DropboxApi,
+  dbxClient: Dropbox,
   mapFilesService: MapFilesService,
   channelSyncId: string,
 ) {
-  const dbx = dbxApi.getDropboxClient(refreshToken, rootNamespaceId)
-
   try {
-    const response = await dbx.filesListFolderContinue({ cursor })
+    const response = await dbxClient.filesListFolderContinue({ cursor })
 
     const entriesWithId = (
       await Promise.all(

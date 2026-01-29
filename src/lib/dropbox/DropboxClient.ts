@@ -1,20 +1,26 @@
 import { Dropbox, type DropboxAuth, type files } from 'dropbox'
+import httpStatus from 'http-status'
+import { camelKeys } from 'js-convert-case'
+import fetch from 'node-fetch'
+import env from '@/config/server.env'
 import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { DropboxClientType, type DropboxClientTypeValue } from '@/db/constants'
-import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import { DropboxAuthClient } from '@/lib/dropbox/DropboxAuthClient'
+import { type DropboxFileMetadata, DropboxFileMetadataSchema } from '@/lib/dropbox/type'
 import { withRetry } from '@/lib/withRetry'
+import { dropboxArgHeader } from '@/utils/header'
 
 export class DropboxClient {
-  protected clientInstance: Dropbox
-  private dropboxApi: DropboxApi
+  protected readonly clientInstance: Dropbox
+  private dbxAuthClient: DropboxAuthClient
 
   constructor(
     refreshToken: string,
     rootNamespaceId?: string | null,
     type?: DropboxClientTypeValue,
   ) {
-    this.dropboxApi = new DropboxApi()
-    this.clientInstance = this.getDropboxClient(refreshToken, rootNamespaceId, type)
+    this.dbxAuthClient = new DropboxAuthClient()
+    this.clientInstance = this.createDropboxClient(refreshToken, rootNamespaceId, type)
   }
 
   /**
@@ -22,14 +28,16 @@ export class DropboxClient {
    * @returns instance of Dropbox client
    * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
-  getDropboxClient(
+  createDropboxClient(
     refreshToken: string,
     rootNamespaceId?: string | null,
     type: DropboxClientTypeValue = DropboxClientType.ROOT,
   ): Dropbox {
-    this.dropboxApi.refreshAccessToken(refreshToken)
+    this.dbxAuthClient.refreshAccessToken(refreshToken)
 
-    const options: { auth: DropboxAuth; pathRoot?: string } = { auth: this.dropboxApi.dropboxAuth }
+    const options: { auth: DropboxAuth; pathRoot?: string } = {
+      auth: this.dbxAuthClient.authInstance,
+    }
 
     // If we have a root namespace, set the header
     if (rootNamespaceId) {
@@ -40,6 +48,25 @@ export class DropboxClient {
     }
 
     return new Dropbox(options)
+  }
+
+  getDropboxClient(): Dropbox {
+    return this.clientInstance
+  }
+
+  async _manualFetch(
+    url: string,
+    headers?: Record<string, string>,
+    body?: NodeJS.ReadableStream | null,
+    otherOptions?: Record<string, string>,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
+  ) {
+    return await fetch(url, {
+      method,
+      headers,
+      body,
+      ...otherOptions,
+    })
   }
 
   async _getAllFilesFolders(
@@ -73,6 +100,52 @@ export class DropboxClient {
     return entries
   }
 
+  async _downloadFile(urlPath: string, filePath: string, rootNamespaceId: string) {
+    const headers = {
+      Authorization: `Bearer ${this.dbxAuthClient.authInstance.getAccessToken()}`,
+      'Dropbox-API-Path-Root': dropboxArgHeader({
+        '.tag': 'namespace_id',
+        namespace_id: rootNamespaceId,
+      }),
+      'Dropbox-API-Arg': dropboxArgHeader({ path: filePath }),
+    }
+    const response = await this.manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers)
+    if (response.status !== httpStatus.OK)
+      throw new Error('DropboxClient#downloadFile. Failed to download file')
+    return response.body
+  }
+
+  /**
+   * Description: this function streams the file to Dropbox. @param body is the readable stream of the file.
+   * For the stream to work we need to add the Content-Type: 'application/octet-stream' in the headers.
+   */
+  async _uploadFile(
+    urlPath: string,
+    filePath: string,
+    body: NodeJS.ReadableStream | null,
+    rootNamespaceId: string,
+  ): Promise<DropboxFileMetadata> {
+    const args = {
+      path: filePath,
+      autorename: false,
+      mode: 'add',
+    }
+
+    const headers = {
+      Authorization: `Bearer ${this.dbxAuthClient.authInstance.getAccessToken()}`,
+      'Dropbox-API-Path-Root': dropboxArgHeader({
+        '.tag': 'namespace_id',
+        namespace_id: rootNamespaceId,
+      }),
+      'Dropbox-API-Arg': dropboxArgHeader(args),
+      'Content-Type': 'application/octet-stream',
+    }
+    const response = await this.manualFetch(`${env.DROPBOX_API_URL}${urlPath}`, headers, body)
+    if (response.status !== httpStatus.OK)
+      throw new Error('DropboxClient#uploadFile. Failed to upload file')
+    return DropboxFileMetadataSchema.parse(camelKeys(await response.json()))
+  }
+
   private wrapWithRetry<Args extends unknown[], R>(
     fn: (...args: Args) => Promise<R>,
   ): (...args: Args) => Promise<R> {
@@ -84,5 +157,8 @@ export class DropboxClient {
       })
   }
 
+  manualFetch = this.wrapWithRetry(this._manualFetch)
   getAllFilesFolders = this.wrapWithRetry(this._getAllFilesFolders)
+  downloadFile = this.wrapWithRetry(this._downloadFile)
+  uploadFile = this.wrapWithRetry(this._uploadFile)
 }
