@@ -113,22 +113,8 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
       return
     }
 
-    // const flatTree = flattenTree(options)
-
-    // const result = flatTree
-    //   .filter((node) => {
-    //     return node.label.toLowerCase().includes(filterValue.toLowerCase())
-    //   })
-    //   .map((node) => ({
-    //     ...node,
-    //     label: node.path,
-    //   }))
-    // if (result.length === 0) {
-    // // only trigger server filtering if there are no results
+    // only trigger server filtering if there are no results
     await searchFolderInDropbox()
-    return
-    // }
-    // setDisplayNodes(result)
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: avoid filterNodes as dependency as it causes infinite loop
