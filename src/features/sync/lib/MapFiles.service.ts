@@ -469,12 +469,11 @@ export class MapFilesService extends AuthenticatedDropboxService {
       }
 
       // calculate synced percentage.
-      const syncedPercentage =
-        channelMap.status === null
-          ? Math.floor((channelMap.syncedFilesCount / channelMap.totalFilesCount) * 100)
-          : channelMap.status
-            ? 100
-            : 0
+      const syncedPercentage = this.getSyncedPercentage(
+        channelMap.status,
+        channelMap.syncedFilesCount,
+        channelMap.totalFilesCount,
+      )
 
       const formattedChannelInfo = {
         id: channelMap.id,
@@ -495,6 +494,23 @@ export class MapFilesService extends AuthenticatedDropboxService {
       }
       logger.error('MapFilesService#formatChannelMap :: Error formatting channel map', error)
       return null
+    }
+  }
+
+  private getSyncedPercentage(
+    status: boolean | null,
+    syncedFilesCount: number,
+    totalFilesCount: number,
+  ) {
+    switch (status) {
+      case true:
+        return 100
+      case false:
+        return 0
+      default: {
+        const calculatedPercentage = Math.floor((syncedFilesCount / totalFilesCount) * 100)
+        return calculatedPercentage > 100 ? 100 : calculatedPercentage
+      }
     }
   }
 }
