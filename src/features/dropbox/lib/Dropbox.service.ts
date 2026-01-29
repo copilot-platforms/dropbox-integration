@@ -13,12 +13,7 @@ import logger from '@/lib/logger'
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree(req: NextRequest) {
     const search = req.nextUrl.searchParams.get('search')
-
-    // Pass the rootNamespaceId from the connection token
-    const dbxClient = this.dbxApi.getDropboxClient(
-      this.connectionToken.refreshToken,
-      this.connectionToken.rootNamespaceId,
-    )
+    const dbxClient = this.dbxClient.getDropboxClient()
 
     if (search) return await this.searchForFolder({ dbxClient, search })
 
@@ -62,7 +57,8 @@ export class DropboxService extends AuthenticatedDropboxService {
 
     // this step makes sure the team folder
     const tempDbxClient = isSharedFolder
-      ? this.dbxApi.getDropboxClient(
+      ? this.dbxClient.createDropboxClient(
+          // create new Dropbox Client but not binded with class
           this.connectionToken.refreshToken,
           folderResult.shared_folder_id,
           DropboxClientType.NAMESPACE_ID,

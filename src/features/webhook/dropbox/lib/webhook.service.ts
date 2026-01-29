@@ -12,7 +12,7 @@ import type { DropboxFileListFolderResultEntries } from '@/features/sync/types'
 import { getDropboxChanges } from '@/features/webhook/dropbox/utils/getDropboxChanges'
 import { generateToken } from '@/lib/copilot/generateToken'
 import User from '@/lib/copilot/models/User.model'
-import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import { DropboxClient } from '@/lib/dropbox/DropboxClient'
 import logger from '@/lib/logger'
 import { handleChannelFileChanges } from '@/trigger/processFileSync'
 
@@ -46,12 +46,17 @@ export class DropboxWebhook {
       and(eq(channelSync.dbxAccountId, accountId), eq(channelSync.status, true)),
     )
 
-    const dbxApi = new DropboxApi()
-    const dbxClient = dbxApi.getDropboxClient(refreshToken, rootNamespaceId)
+    const dbxClient = new DropboxClient(refreshToken, rootNamespaceId).getDropboxClient()
     for (const channel of channels) {
       const proceed = await this.handleDbxRootPathMove(channel, mapFilesService, dbxClient)
       proceed &&
-        (await this.processChannelChanges(channel, dbxApi, mapFilesService, user, connectionToken))
+        (await this.processChannelChanges(
+          channel,
+          dbxClient,
+          mapFilesService,
+          user,
+          connectionToken,
+        ))
     }
   }
 
@@ -106,7 +111,7 @@ export class DropboxWebhook {
 
   private async processChannelChanges(
     channel: ChannelSyncSelectType,
-    dbxApi: DropboxApi,
+    dbxClient: Dropbox,
     mapFilesService: MapFilesService,
     user: User,
     connectionToken: DropboxConnectionTokens,
@@ -125,11 +130,9 @@ export class DropboxWebhook {
         newCursor,
         hasMore: more,
       } = await getDropboxChanges(
-        connectionToken.refreshToken,
-        connectionToken.rootNamespaceId,
         currentCursor,
         dbxRootPath,
-        dbxApi,
+        dbxClient,
         mapFilesService,
         channelSyncId,
       )

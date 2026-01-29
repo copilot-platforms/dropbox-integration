@@ -1,6 +1,7 @@
 import DropboxConnectionsService from '@/features/auth/lib/DropboxConnections.service'
 import BaseService from '@/lib/copilot/services/base.service'
-import { DropboxApi } from '@/lib/dropbox/DropboxApi'
+import { DropboxAuthClient } from '@/lib/dropbox/DropboxAuthClient'
+import { DropboxClient } from '@/lib/dropbox/DropboxClient'
 import type { DropboxAuthResponseType } from '@/lib/dropbox/type'
 import logger from '@/lib/logger'
 
@@ -13,12 +14,12 @@ class AuthService extends BaseService {
     let tokenSet: DropboxAuthResponseType, rootNamespaceId: string
 
     try {
-      const dbx = new DropboxApi()
+      const dbx = new DropboxAuthClient()
       tokenSet = await dbx.handleDropboxCallback(urlParams)
 
       // Need to get the user's account info to get the Team Root Namespace ID. This step makes sure we are accessing the root folder that includes both personal and team folder
       console.info('AuthService#handleDropboxCallback :: Getting account info')
-      const dbxClient = dbx.getDropboxClient(tokenSet.refreshToken)
+      const dbxClient = new DropboxClient(tokenSet.refreshToken).getDropboxClient()
       const accountInfo = await dbxClient.usersGetCurrentAccount()
       console.info('AuthService#handleDropboxCallback :: Account info', accountInfo)
 
