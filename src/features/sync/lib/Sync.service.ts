@@ -4,7 +4,6 @@ import httpStatus from 'http-status'
 import { ApiError as CopilotApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import fetch from 'node-fetch'
 import z from 'zod'
-import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
@@ -40,21 +39,12 @@ export class SyncService extends AuthenticatedDropboxService {
       assemblyChannelId,
       dbxRootPath,
     )
-    const dbxClient = this.dbxApi.getDropboxClient(
-      this.connectionToken.refreshToken,
-      this.connectionToken.rootNamespaceId,
-    )
-    const dbxFilesList = dbxClient.filesListFolder({
-      path: dbxRootPath,
-      recursive: true,
-      limit: MAX_FETCH_DBX_RESOURCES,
-      include_non_downloadable_files: false,
-    })
+    const dbxFilesList = this.dbxClient.getAllFilesFolders(dbxRootPath, true, true)
     const assemblyFilesList = this.user.copilot.listFiles(assemblyChannelId)
     const [dbxFiles, assemblyFiles] = await Promise.all([dbxFilesList, assemblyFilesList])
     const filteredAssemblyFiles = assemblyFiles.data.filter((file) => file.status !== 'pending')
 
-    const totalFilesCount = dbxFiles.result.entries.length + filteredAssemblyFiles.length - 1 // Note: subtract 1 to exclude the dbx root folder
+    const totalFilesCount = dbxFiles.length + filteredAssemblyFiles.length - 1 // Note: subtract 1 to exclude the dbx root folder
     await this.mapFilesService.getOrCreateChannelMap({
       totalFilesCount,
       assemblyChannelId,

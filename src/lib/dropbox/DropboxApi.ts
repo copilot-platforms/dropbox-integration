@@ -14,7 +14,7 @@ import { withRetry } from '@/lib/withRetry'
 import { dropboxArgHeader } from '@/utils/header'
 
 export class DropboxApi {
-  private readonly dropboxAuth: DropboxAuth
+  readonly dropboxAuth: DropboxAuth
 
   constructor() {
     this.dropboxAuth = this.initializeDropboxAuth()
