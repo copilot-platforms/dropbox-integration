@@ -6,25 +6,20 @@ import { DropboxService } from '@/features/dropbox/lib/Dropbox.service'
 import User from '@/lib/copilot/models/User.model'
 
 export const getFolderTree = async (req: NextRequest) => {
-  try {
-    const token = req.nextUrl.searchParams.get('token')
+  const token = req.nextUrl.searchParams.get('token')
 
-    const user = await User.authenticate(token)
-    const dbxService = new DropboxConnectionsService(user)
-    const connection = await dbxService.getConnectionForWorkspace()
+  const user = await User.authenticate(token)
+  const dbxService = new DropboxConnectionsService(user)
+  const connection = await dbxService.getConnectionForWorkspace()
 
-    if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.NOT_FOUND)
-    if (!connection.accountId) throw new APIError('No account Id found', httpStatus.NOT_FOUND)
+  if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.NOT_FOUND)
+  if (!connection.accountId) throw new APIError('No account Id found', httpStatus.NOT_FOUND)
 
-    const dropboxService = new DropboxService(user, {
-      refreshToken: connection.refreshToken,
-      accountId: connection.accountId,
-      rootNamespaceId: connection.rootNamespaceId,
-    })
-    const folders = await dropboxService.getFolderTree(req)
-    return NextResponse.json({ message: 'Folder tree fetched successfully', folders })
-  } catch (error) {
-    console.warn('Something went wrong', error)
-    return NextResponse.json({ message: 'Something went wrong', folders: [] })
-  }
+  const dropboxService = new DropboxService(user, {
+    refreshToken: connection.refreshToken,
+    accountId: connection.accountId,
+    rootNamespaceId: connection.rootNamespaceId,
+  })
+  const folders = await dropboxService.getFolderTree(req)
+  return NextResponse.json({ message: 'Folder tree fetched successfully', folders })
 }
