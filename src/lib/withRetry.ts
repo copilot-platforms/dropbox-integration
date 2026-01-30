@@ -1,6 +1,7 @@
 // import * as Sentry from '@sentry/nextjs'
 
 import Sentry from '@sentry/nextjs'
+import { DropboxResponseError } from 'dropbox'
 import pRetry from 'p-retry'
 import type { StatusableError } from '@/errors/BaseServerError'
 
@@ -18,13 +19,22 @@ export const withRetry = async <Args extends unknown[], R>(
     async () => {
       try {
         return await fn(...args)
-      } catch (error) {
-        const err = error as StatusableError
+      } catch (error: unknown) {
+        let retryAfter: number | undefined, statusCode: number
+        if (error instanceof DropboxResponseError) {
+          const retryTime = error.headers.get('retry-after') || error.headers['retry-after']
+          retryAfter = retryTime ? parseInt(retryTime, 10) : undefined
+          statusCode = error.status
+        } else {
+          const err = error as StatusableError
+          retryAfter = err.retryAfter
+          statusCode = err.status
+        }
 
-        if (err.status === 429 && err.retryAfter) {
+        if (statusCode === 429 && retryAfter) {
           // If rate limit happens with retryAfter value from dropbox api. Wait
-          const waitMs = err.retryAfter * 1000
-          console.warn(`Rate limited. Waiting for ${err.retryAfter} seconds before retry...`)
+          const waitMs = retryAfter * 1000
+          console.warn(`Rate limited. Waiting for ${retryAfter} seconds before retry...`)
           await new Promise((resolve) => setTimeout(resolve, waitMs))
         }
 
