@@ -19,6 +19,15 @@ export const withRetry = async <Args extends unknown[], R>(
       try {
         return await fn(...args)
       } catch (error) {
+        const err = error as StatusableError
+
+        if (err.status === 429 && err.retryAfter) {
+          // If rate limit happens with retryAfter value from dropbox api. Wait
+          const waitMs = err.retryAfter * 1000
+          console.warn(`Rate limited. Waiting for ${err.retryAfter} seconds before retry...`)
+          await new Promise((resolve) => setTimeout(resolve, waitMs))
+        }
+
         // Hopefully now sentry doesn't report retry errors as well. We have enough triage issues as it is
         Sentry.withScope((scope) => {
           if (isEventProcessorRegistered) return

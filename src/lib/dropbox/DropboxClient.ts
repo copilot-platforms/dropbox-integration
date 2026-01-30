@@ -5,8 +5,10 @@ import fetch from 'node-fetch'
 import env from '@/config/server.env'
 import { MAX_FETCH_DBX_RESOURCES } from '@/constants/limits'
 import { DropboxClientType, type DropboxClientTypeValue } from '@/db/constants'
+import type { StatusableError } from '@/errors/BaseServerError'
 import { DropboxAuthClient } from '@/lib/dropbox/DropboxAuthClient'
 import { type DropboxFileMetadata, DropboxFileMetadataSchema } from '@/lib/dropbox/type'
+
 import { withRetry } from '@/lib/withRetry'
 import { dropboxArgHeader } from '@/utils/header'
 
@@ -61,12 +63,22 @@ export class DropboxClient {
     otherOptions?: Record<string, string>,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
   ) {
-    return await fetch(url, {
+    const response = await fetch(url, {
       method,
       headers,
       body,
       ...otherOptions,
     })
+
+    if (!response.ok) {
+      const retryAfter = response.headers.get('Retry-After')
+      const error = new Error(`Request failed with status ${response.status}`) as StatusableError
+      error.status = response.status
+      error.retryAfter = retryAfter ? parseInt(retryAfter, 10) : undefined
+      throw error
+    }
+
+    return response
   }
 
   async _getAllFilesFolders(
