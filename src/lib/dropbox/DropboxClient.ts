@@ -85,22 +85,25 @@ export class DropboxClient {
     rootPath: string,
     recursive: boolean = false,
     fetchAll: boolean = false,
+    limit: number = MAX_FETCH_DBX_RESOURCES,
   ) {
     console.info(
       'DropboxClient#getAllFilesFolders :: Fetching all files and folders. Root path: ',
       rootPath,
     )
+    const newLimit = limit > MAX_FETCH_DBX_RESOURCES ? MAX_FETCH_DBX_RESOURCES : limit
+
     const entries: files.ListFolderResult['entries'] = []
     let filesFolders = await this.clientInstance.filesListFolder({
       path: rootPath,
       recursive,
-      limit: MAX_FETCH_DBX_RESOURCES,
+      limit: newLimit,
       include_non_downloadable_files: false,
       include_media_info: false,
     })
     entries.push(...filesFolders.result.entries)
 
-    while (fetchAll && filesFolders.result.has_more) {
+    while (filesFolders.result.has_more && (fetchAll || entries.length < newLimit)) {
       const cursor = filesFolders.result.cursor
       filesFolders = await this.clientInstance.filesListFolderContinue({
         cursor,

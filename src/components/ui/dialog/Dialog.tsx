@@ -1,11 +1,12 @@
 import { Button } from 'copilot-design-system'
+import parse from 'html-react-parser'
 import type React from 'react'
 import Divider from '@/components/layouts/Divider'
 import { useDialog } from '@/components/ui/dialog/useDialog'
 
 interface DialogProps {
   open: boolean
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setOpen: () => void
   title: string
   description: string
   cancel: () => void
@@ -33,7 +34,7 @@ export const Dialog: React.FC<DialogProps> = ({
         </div>
         <Divider />
         <div className="px-7 py-4">
-          <p className="text-[13px]">{description}</p>
+          <p className="text-[13px]">{parse(description)}</p>
         </div>
 
         <Divider />
