@@ -75,3 +75,7 @@ export function splitPathAndFolder(fullPath: string): { path: string; folder: st
     folder: fullPath.substring(lastSlashIndex + 1),
   }
 }
+
+export function sanitizePath(path: string) {
+  return path.replace(/^\/+/, '')
+}

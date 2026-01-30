@@ -1,19 +1,13 @@
 import { useEffect, useRef } from 'react'
 
-export const useDialog = ({
-  isOpen,
-  setIsOpen,
-}: {
-  isOpen: boolean
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
-}) => {
+export const useDialog = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: () => void }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Handle click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen()
       }
     }
 

@@ -8,6 +8,7 @@ import TreeSelect from '@/components/ui/dropbox/tree-select/TreeSelect'
 import { cn } from '@/components/utils'
 import LastSyncAt from '@/features/sync/components/LastSyncedAt'
 import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
+import { useDialogContext } from '@/features/sync/hooks/useDialogContext'
 import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useRemoveChannelSync, useTable, useUpdateUserList } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
@@ -46,18 +47,20 @@ const MappingTableNoRecords = () => {
   )
 }
 
-const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: string) => void }) => {
+const MappingTableRow = () => {
   const {
     handleSyncStatusChange,
     handleItemRemove,
-    handleSync,
+    openSyncConfirmDialog,
     onUserSelectorValueChange,
     filteredValue,
     onDropboxFolderChange,
+    totalCountLoading,
   } = useTable()
   const { unselectedChannelList } = useUpdateUserList()
   const { isFolderTreeLoading } = useFolder()
   const { tempMapList, userChannelList, syncedPercentage, tempFolders } = useUserChannel()
+  const { openConfirmDialog } = useRemoveChannelSync()
 
   if (isFolderTreeLoading) {
     return (
@@ -135,14 +138,16 @@ const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: strin
                     {...(mapItem.status !== null && { prefixIcon: 'Check' })}
                     size="sm"
                     variant="primary"
-                    onClick={() => handleSync(index)}
+                    onClick={() => openSyncConfirmDialog(index)}
                     disabled={
+                      totalCountLoading ||
                       !mapItem.dbxRootPath ||
                       !mapItem.fileChannelValue.length ||
                       mapItem.status === null
                         ? true
                         : mapItem.status
                     }
+                    loading={totalCountLoading}
                   />
                   <Button
                     label="Discard"
@@ -173,7 +178,7 @@ export const MappingTable = () => {
     { title: 'Actions', key: 'actions', className: 'w-64' },
   ]
 
-  const { openDialog, setOpenDialog, handleRemoveSync, openConfirmDialog } = useRemoveChannelSync()
+  const { isOpen, onCancel, onConfirm, toggleDialog, title, description } = useDialogContext()
 
   return (
     <div className="m-10 mt-0 min-h-0 flex-1 overflow-x-auto">
@@ -195,18 +200,18 @@ export const MappingTable = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 border border-gray-200 bg-white">
-            <MappingTableRow openConfirmDialog={openConfirmDialog} />
+            <MappingTableRow />
           </tbody>
         </table>
       </div>
-      {openDialog && (
+      {isOpen && (
         <Dialog
-          open={openDialog}
-          setOpen={setOpenDialog}
-          title="Remove channel sync"
-          description="Are you sure you want to remove this channel sync?"
-          cancel={() => setOpenDialog(false)}
-          confirm={() => handleRemoveSync()}
+          open={isOpen}
+          setOpen={toggleDialog}
+          title={title}
+          description={description}
+          cancel={onCancel}
+          confirm={() => onConfirm?.()}
         />
       )}
     </div>
