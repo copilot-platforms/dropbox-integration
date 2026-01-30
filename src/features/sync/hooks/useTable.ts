@@ -21,7 +21,7 @@ export const useTable = () => {
   const [localDbxRootPath, setLocalDbxRootPath] = useState<string | null>(null)
   const [tempTotalFilesCount, setTempTotalFilesCount] = useState<number>(0)
   const [totalCountLoading, setTotalCountLoading] = useState(false)
-  const maxFileLimit = 5000
+  const maxFileLimit = 500
 
   // for dialog
   const { setDialogAttributes, toggleDialog } = useDialogContext()
