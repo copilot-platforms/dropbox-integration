@@ -40,3 +40,7 @@ export function appendDateTimeToFilePath(filePath: string): string {
 export function getPathFromRoot(path: string, root: string) {
   return path.replace(root, '')
 }
+
+export function sanitizePath(path: string) {
+  return path.replace(/^\/+/, '')
+}
