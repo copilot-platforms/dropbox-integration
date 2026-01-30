@@ -53,7 +53,7 @@ export class DropboxService extends AuthenticatedDropboxService {
     path: string,
     dbxClient: Dropbox,
   ) {
-    const isSharedFolder = !!folderResult.shared_folder_id
+    const isSharedFolder = !!folderResult.sharing_info?.shared_folder_id
     const prefixPath = isSharedFolder ? path : undefined
 
     // this step makes sure the team folder
@@ -92,22 +92,17 @@ export class DropboxService extends AuthenticatedDropboxService {
     }
 
     const { folders, pathArray } = this.formatSearchResults(searchResponse.result.matches)
-
     if (!pathArray.length) return folders
 
-    const formattedFolders: Folder[] = []
-    const folderPromise = pathArray.map(async (path) => {
-      const filesMetadata = await dbxClient.filesGetMetadata({
-        path,
-      })
-      const folderResult = filesMetadata.result
+    const matchMetadata = searchResponse.result.matches[0].metadata
+    if (matchMetadata['.tag'] === 'other') return folders
+    const folderResult = matchMetadata.metadata
 
-      if (folderResult['.tag'] === ObjectType.FOLDER) {
-        const childFolders = await this.searchChildrenFolders(folderResult, path, dbxClient)
-        formattedFolders.push(...childFolders)
-      }
-    })
-    await Promise.all(folderPromise)
+    const formattedFolders: Folder[] = []
+    if (folderResult['.tag'] === ObjectType.FOLDER) {
+      const childFolders = await this.searchChildrenFolders(folderResult, pathArray[0], dbxClient)
+      formattedFolders.push(...childFolders)
+    }
 
     // return unique array
     return [...new Map([...folders, ...formattedFolders].map((item) => [item.path, item])).values()]
