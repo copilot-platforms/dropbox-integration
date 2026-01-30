@@ -9,6 +9,7 @@ import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type { Folder } from '@/features/sync/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import logger from '@/lib/logger'
+import { withRetry } from '@/lib/withRetry'
 
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree(req: NextRequest) {
@@ -77,7 +78,7 @@ export class DropboxService extends AuthenticatedDropboxService {
    * Description: This function first searches for the term using filesSearchV2. This returns the exact folder.
    * To get the subfolder of the result folder, we use filesListFolder with the namespace_id of the result folder.
    */
-  async searchForFolder({ dbxClient, search }: { dbxClient: Dropbox; search: string }) {
+  async _searchForFolder({ dbxClient, search }: { dbxClient: Dropbox; search: string }) {
     logger.info('DropboxService#getFolderTree :: Searching folder in Dropbox... Query: ', search)
     const searchResponse = await dbxClient.filesSearchV2({
       query: search,
@@ -190,4 +191,17 @@ export class DropboxService extends AuthenticatedDropboxService {
 
     return { folders, pathArray }
   }
+
+  private wrapWithRetry<Args extends unknown[], R>(
+    fn: (...args: Args) => Promise<R>,
+  ): (...args: Args) => Promise<R> {
+    return (...args: Args): Promise<R> =>
+      withRetry(fn.bind(this), args, {
+        minTimeout: 3000,
+        // After a facter 2 exponential backoff [minTimeout * factor^(attemptNumber - 1)] timeout after 3 retries is 12 secs
+        maxTimeout: 12000,
+      })
+  }
+
+  searchForFolder = this.wrapWithRetry(this._searchForFolder)
 }
