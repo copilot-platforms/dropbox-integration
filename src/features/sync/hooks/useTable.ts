@@ -1,11 +1,12 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuthContext } from '@/features/auth/hooks/useAuth'
+import { useDialogContext } from '@/features/sync/hooks/useDialogContext'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import type { MapList } from '@/features/sync/types'
 import { customFetcher } from '@/helper/fetcher.helper'
 import { getFreshFolders } from '@/helper/table.helper'
-
 import { type UserCompanySelectorInputValue, UserCompanySelectorObject } from '@/lib/copilot/types'
+import { sanitizePath } from '@/utils/filePath'
 
 export const useTable = () => {
   const { user } = useAuthContext()
@@ -14,6 +15,16 @@ export const useTable = () => {
     [key: number]: string
   }>()
   const [filteredValue, setFilteredValue] = useState<{ [key: number]: string | null }>()
+
+  // to calculate total files count
+  const [localFileChannelId, setLocalFileChannelId] = useState<string | null>(null)
+  const [localDbxRootPath, setLocalDbxRootPath] = useState<string | null>(null)
+  const [tempTotalFilesCount, setTempTotalFilesCount] = useState<number>(0)
+  const [totalCountLoading, setTotalCountLoading] = useState(false)
+  const maxFileLimit = 5000
+
+  // for dialog
+  const { setDialogAttributes, toggleDialog } = useDialogContext()
 
   const updateTempMapListState = (index: number, option: Partial<MapList>) => {
     setUserChannel((prev) => ({
@@ -29,6 +40,88 @@ export const useTable = () => {
       }),
     }))
   }
+
+  const handleSync = async (index: number) => {
+    const payload = {
+      fileChannelId: fileChannelIds?.[index] || tempMapList[index].fileChannelId,
+      dbxRootPath: filteredValue?.[index] || tempMapList[index].dbxRootPath,
+    }
+    updateTempMapListState(index, { status: null })
+    toggleDialog(false)
+
+    try {
+      await customFetcher(
+        'POST',
+        `/api/sync?token=${user.token}`,
+        {},
+        {
+          body: JSON.stringify(payload),
+        },
+      )
+    } catch (error: unknown) {
+      console.error(error)
+      updateTempMapListState(index, { status: false })
+    }
+    setLocalDbxRootPath(null)
+    setLocalFileChannelId(null)
+  }
+
+  const getFileChannelName = (index: number) => {
+    const clientId = tempMapList[index].fileChannelValue[0].id
+    const companyId = tempMapList[index].fileChannelValue[0].companyId
+    const object = tempMapList[index].fileChannelValue[0].object
+
+    if (object === UserCompanySelectorObject.CLIENT) {
+      const name = userChannelList.clients?.find((item) => item.value === clientId)?.label
+      const companyName = userChannelList.companies?.find(
+        (item) => item.companyId === companyId,
+      )?.label
+      return `${name} ${companyName ? `(${companyName})` : ''}`
+    }
+
+    if (object === UserCompanySelectorObject.COMPANY) {
+      return userChannelList.companies?.find((item) => item.value === companyId)?.label
+    }
+  }
+
+  const openSyncConfirmDialog = async (index: number) => {
+    if (tempTotalFilesCount >= maxFileLimit) {
+      const fileChannelName = getFileChannelName(index)
+      const description = `You're about to sync <strong>${maxFileLimit}+</strong> files between <strong>${fileChannelName}</strong> and <strong>${sanitizePath(tempMapList[index].dbxRootPath)}</strong>. This may take some time to complete and will run in the background.`
+      setDialogAttributes((prev) => ({
+        ...prev,
+        isOpen: true,
+        title: 'Confirm large sync',
+        description,
+        onConfirm: () => handleSync(index),
+      }))
+    } else {
+      await handleSync(index)
+    }
+  }
+
+  const getTotalFilesCount = useCallback(async () => {
+    if (!localFileChannelId || !localDbxRootPath) return
+
+    setTotalCountLoading(true)
+    const urlPath = `/api/sync/total-files-count?token=${user.token}&assemblyChannelId=${encodeURIComponent(localFileChannelId)}&dbxRootPath=${encodeURIComponent(localDbxRootPath)}`
+
+    const response = await customFetcher('GET', urlPath, {}, {})
+    if (!response.ok) {
+      throw new Error(`Something went wrong. Status code: ${response.status}`)
+    }
+
+    const resp = await response.json()
+    const count = resp.count
+
+    setTempTotalFilesCount(count)
+    setTotalCountLoading(false)
+  }, [localDbxRootPath, localFileChannelId, user.token])
+
+  useEffect(() => {
+    // biome-ignore lint/nursery/noFloatingPromises: floating promises are fine here
+    if (localDbxRootPath && localFileChannelId) getTotalFilesCount()
+  }, [getTotalFilesCount, localDbxRootPath, localFileChannelId])
 
   const onUserSelectorValueChange = (val: UserCompanySelectorInputValue[], index: number) => {
     let fileChannelId: string | undefined
@@ -49,11 +142,17 @@ export const useTable = () => {
 
     setFileChannelIds((prev) => ({ ...prev, [index]: fileChannelId }))
     updateTempMapListState(index, { fileChannelValue: val, fileChannelId })
+
+    // upon select, set fileChannelId to get all files/folder
+    setLocalFileChannelId(fileChannelId)
   }
 
   const onDropboxFolderChange = (val: string | null, index: number) => {
     setFilteredValue((prev) => ({ ...prev, [index]: val }))
     updateTempMapListState(index, { dbxRootPath: val || '' })
+
+    // upon select, set dropbox folder path to get all files/folder
+    setLocalDbxRootPath(val)
   }
 
   const handleItemRemove = (index: number) => {
@@ -66,28 +165,8 @@ export const useTable = () => {
       ),
     }))
     setFilteredValue((prev) => ({ ...prev, [index]: null }))
-  }
-
-  const handleSync = async (index: number) => {
-    const payload = {
-      fileChannelId: fileChannelIds?.[index] || tempMapList[index].fileChannelId,
-      dbxRootPath: filteredValue?.[index] || tempMapList[index].dbxRootPath,
-    }
-    updateTempMapListState(index, { status: null })
-
-    try {
-      await customFetcher(
-        'POST',
-        `/api/sync?token=${user.token}`,
-        {},
-        {
-          body: JSON.stringify(payload),
-        },
-      )
-    } catch (error: unknown) {
-      console.error(error)
-      updateTempMapListState(index, { status: false })
-    }
+    setLocalDbxRootPath(null)
+    setLocalFileChannelId(null)
   }
 
   const handleSyncStatusChange = async (index: number) => {
@@ -118,9 +197,10 @@ export const useTable = () => {
     onUserSelectorValueChange,
     filteredValue,
     onDropboxFolderChange,
-    handleSync,
     handleItemRemove,
     handleSyncStatusChange,
+    openSyncConfirmDialog,
+    totalCountLoading,
   }
 }
 
@@ -147,10 +227,12 @@ export const useRemoveChannelSync = () => {
   const { user } = useAuthContext()
   const { setUserChannel, tempMapList } = useUserChannel()
 
-  const [openDialog, setOpenDialog] = useState(false)
   const [removeId, setRemoveId] = useState<string | undefined>()
+  const { setDialogAttributes, toggleDialog } = useDialogContext()
 
   const removeChannelSync = async () => {
+    toggleDialog(false)
+
     const localMapList = tempMapList
     setUserChannel((prev) => ({
       ...prev,
@@ -177,20 +259,19 @@ export const useRemoveChannelSync = () => {
     }
   }
 
-  const handleRemoveSync = async () => {
-    setOpenDialog(false)
-    await removeChannelSync()
-  }
-
   const openConfirmDialog = (id?: string) => {
-    setOpenDialog(true)
     setRemoveId(id)
+
+    setDialogAttributes((prev) => ({
+      ...prev,
+      isOpen: true,
+      title: 'Remove channel sync',
+      description: 'Are you sure you want to remove this channel sync?',
+      onConfirm: () => removeChannelSync(),
+    }))
   }
 
   return {
-    handleRemoveSync,
-    setOpenDialog,
-    openDialog,
     openConfirmDialog,
   }
 }

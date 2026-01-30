@@ -7,6 +7,7 @@ import { SyncService } from '@/features/sync/lib/Sync.service'
 import {
   FileSyncCreateRequestSchema,
   RemoveChannelSyncSchema,
+  TotalFilesCountRequestSchema,
   UpdateConnectionStatusSchema,
 } from '@/features/sync/types'
 import User from '@/lib/copilot/models/User.model'
@@ -31,7 +32,7 @@ export const initiateSync = async (req: NextRequest) => {
   })
 
   // 3. get total files count (sum of all files in file channel + files in dropbox path)
-  await syncService.calculateTotalFilesCount(fileChannelId, dbxRootPath)
+  await syncService.storeTotalFilesCount(fileChannelId, dbxRootPath)
 
   // 4. start sync
   await syncService.initiateSync(fileChannelId, dbxRootPath)
@@ -89,4 +90,36 @@ export const removeChannelSyncMapping = async (req: NextRequest) => {
   await syncService.removeChannelSyncMapping(channelSyncId)
 
   return NextResponse.json({ message: 'Sync removed successfully' })
+}
+
+export const getTotalFilesCount = async (req: NextRequest) => {
+  const token = req.nextUrl.searchParams.get('token')
+
+  const requestParams = {
+    assemblyChannelId: req.nextUrl.searchParams.get('assemblyChannelId'),
+    dbxRootPath: req.nextUrl.searchParams.get('dbxRootPath'),
+    limit: req.nextUrl.searchParams.get('limit') || undefined,
+  }
+  const { assemblyChannelId, dbxRootPath, limit } =
+    TotalFilesCountRequestSchema.parse(requestParams)
+
+  const user = await User.authenticate(token)
+  const dbxService = new DropboxConnectionsService(user)
+  const connection = await dbxService.getConnectionForWorkspace()
+
+  if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.NOT_FOUND)
+  if (!connection.accountId) throw new APIError('No account Id found', httpStatus.NOT_FOUND)
+
+  const syncService = new SyncService(user, {
+    refreshToken: connection.refreshToken,
+    accountId: connection.accountId,
+    rootNamespaceId: connection.rootNamespaceId,
+  })
+  const count = await syncService.calculateTotalFilesCount(
+    assemblyChannelId,
+    dbxRootPath,
+    limit ? parseInt(limit, 10) : undefined,
+  )
+
+  return NextResponse.json({ message: 'Total files count fetched successfully', count })
 }

@@ -135,3 +135,9 @@ export const UpdateConnectionStatusSchema = z.object({
 export const RemoveChannelSyncSchema = z.object({
   channelSyncId: z.string(),
 })
+
+export const TotalFilesCountRequestSchema = z.object({
+  assemblyChannelId: z.string().min(1),
+  dbxRootPath: z.string().min(1),
+  limit: z.string().min(1).optional(),
+})

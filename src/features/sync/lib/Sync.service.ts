@@ -33,18 +33,22 @@ export class SyncService extends AuthenticatedDropboxService {
     this.mapFilesService = new MapFilesService(user, connectionToken)
   }
 
-  async calculateTotalFilesCount(assemblyChannelId: string, dbxRootPath: string) {
+  async calculateTotalFilesCount(assemblyChannelId: string, dbxRootPath: string, limit?: number) {
     logger.info(
       'SyncService#calculateTotalFilesCount :: Calculating total files count',
       assemblyChannelId,
       dbxRootPath,
     )
-    const dbxFilesList = this.dbxClient.getAllFilesFolders(dbxRootPath, true, true)
+    const dbxFilesList = this.dbxClient.getAllFilesFolders(dbxRootPath, true, false, limit)
     const assemblyFilesList = this.user.copilot.listFiles(assemblyChannelId)
     const [dbxFiles, assemblyFiles] = await Promise.all([dbxFilesList, assemblyFilesList])
     const filteredAssemblyFiles = assemblyFiles.data.filter((file) => file.status !== 'pending')
 
-    const totalFilesCount = dbxFiles.length + filteredAssemblyFiles.length - 1 // Note: subtract 1 to exclude the dbx root folder
+    return dbxFiles.length + filteredAssemblyFiles.length - 1 // Note: subtract 1 to exclude the dbx root folder
+  }
+
+  async storeTotalFilesCount(assemblyChannelId: string, dbxRootPath: string) {
+    const totalFilesCount = await this.calculateTotalFilesCount(assemblyChannelId, dbxRootPath)
     await this.mapFilesService.getOrCreateChannelMap({
       totalFilesCount,
       assemblyChannelId,

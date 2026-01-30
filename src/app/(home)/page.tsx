@@ -10,6 +10,7 @@ import { disconnectDropbox } from '@/features/auth/utils/dropboxConnections'
 import { RealtimeSync } from '@/features/sync/components/RealtimeSync'
 import { SubHeader } from '@/features/sync/components/SubHeader'
 import { MappingTable } from '@/features/sync/components/Table'
+import { DialogContextProvider } from '@/features/sync/context/DialogContext'
 import { UserChannelContextProvider } from '@/features/sync/context/UserChannelContext'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import { UserService } from '@/features/sync/lib/User.service'
@@ -64,7 +65,9 @@ const Home = async ({ searchParams }: PageProps) => {
             portalUrl={workspace.portalUrl}
           />
           <SubHeader />
-          <MappingTable />
+          <DialogContextProvider>
+            <MappingTable />
+          </DialogContextProvider>
         </CheckConnection>
       </UserChannelContextProvider>
     </AuthContextProvider>
