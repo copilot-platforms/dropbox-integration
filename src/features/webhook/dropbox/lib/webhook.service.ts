@@ -109,6 +109,29 @@ export class DropboxWebhook {
     }
   }
 
+  private async getAndUpdateDropboxCursor({
+    dbxClient,
+    mapFilesService,
+    channelSyncId,
+    dbxRootPath,
+  }: {
+    dbxClient: Dropbox
+    mapFilesService: MapFilesService
+    channelSyncId: string
+    dbxRootPath: string
+  }) {
+    const dbxCursor = (
+      await dbxClient.filesListFolderGetLatestCursor({ path: dbxRootPath, recursive: true })
+    ).result.cursor
+    await mapFilesService.updateChannelMapById(
+      {
+        dbxCursor,
+      },
+      channelSyncId,
+    )
+    return dbxCursor
+  }
+
   private async processChannelChanges(
     channel: ChannelSyncSelectType,
     dbxClient: Dropbox,
@@ -122,6 +145,14 @@ export class DropboxWebhook {
     const { id: channelSyncId, dbxRootPath, assemblyChannelId, dbxCursor } = channel
     let hasMore = true
     let currentCursor = dbxCursor ?? ''
+    if (!currentCursor)
+      currentCursor = await this.getAndUpdateDropboxCursor({
+        dbxClient,
+        mapFilesService,
+        channelSyncId,
+        dbxRootPath,
+      })
+
     const allChanges: DropboxFileListFolderResultEntries = []
 
     while (hasMore) {

@@ -131,6 +131,7 @@ export const initiateDropboxToAssemblySync = task({
       {
         status: true,
         lastSyncedAt: new Date(),
+        dbxCursor: dbxFiles.result.cursor,
       },
       assemblyChannelId,
       dbxRootPath,
