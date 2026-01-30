@@ -1,3 +1,4 @@
+import { TriggerMachineSchema } from '@/trigger/type'
 import 'server-only'
 
 import { z } from 'zod'
@@ -10,6 +11,7 @@ const ServerEnvSchema = z.object({
   DROPBOX_REDIRECT_URI: z.url(),
   DROPBOX_SCOPES: z.string().min(1),
   DROPBOX_API_URL: z.url(),
+  TRIGGER_MACHINE: TriggerMachineSchema,
 })
 
 const env = ServerEnvSchema.parse(process.env)
