@@ -65,6 +65,12 @@ export const withRetry = async <Args extends unknown[], R>(
       factor: 2, // Exponential factor for timeout delay. Tweak this if issues still persist
 
       onFailedAttempt: (error: { error: unknown; attemptNumber: number; retriesLeft: number }) => {
+        console.warn(
+          'Error from onFailedAttempt. Error: ',
+          JSON.stringify(error),
+          (error.error as StatusableError).status,
+        )
+
         if (
           (error.error as StatusableError).status !== 429 &&
           (error.error as StatusableError).status !== 500
@@ -79,6 +85,9 @@ export const withRetry = async <Args extends unknown[], R>(
       shouldRetry: (error: unknown) => {
         // Typecasting because Copilot doesn't export an error class
         const err = error as StatusableError
+
+        console.warn('Error from shouldRetry. Error: ', JSON.stringify(err), 'status: ', err.status)
+
         // Retry only if statusCode indicates a ratelimit or Internal Server Error
         return err.status === 429 || err.status === 500
       },
