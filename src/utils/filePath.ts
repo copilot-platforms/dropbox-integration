@@ -40,3 +40,38 @@ export function appendDateTimeToFilePath(filePath: string): string {
 export function getPathFromRoot(path: string, root: string) {
   return path.replace(root, '')
 }
+
+export function replaceSpecialCharactersWithSpace(str: string) {
+  const sanitizedString = str.replace(/[#@$%^&*()+=[\]{}|\\:;"'<>,?~`]/g, ' ')
+  return sanitizedString.trim()
+}
+
+export function splitPathAndFolder(fullPath: string): { path: string; folder: string } {
+  if (!fullPath) {
+    return { path: '', folder: '' }
+  }
+
+  // if ends with slash then folder is empty, path is the full path
+  if (fullPath.endsWith('/')) {
+    const sanitizedPath = fullPath.startsWith('/') ? fullPath : `/${fullPath}`
+    return { path: sanitizedPath.replace(/\/+$/, ''), folder: '' }
+  }
+
+  const lastSlashIndex = fullPath.lastIndexOf('/')
+
+  // no slash at all -> folder is full path, path is empty
+  if (lastSlashIndex === -1) {
+    return { path: '', folder: fullPath }
+  }
+
+  // slash at the start (e.g., '/folder')
+  if (lastSlashIndex === 0) {
+    return { path: '', folder: fullPath.slice(1) }
+  }
+
+  const path = fullPath.substring(0, lastSlashIndex)
+  return {
+    path: path.startsWith('/') ? path : `/${path}`,
+    folder: fullPath.substring(lastSlashIndex + 1),
+  }
+}

@@ -32,7 +32,7 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuthContext()
-  const debouncedQuery = useDebounce(filterValue)
+  const debouncedQuery = useDebounce(filterValue, 1000)
   const [isSearching, setIsSearching] = useState(false)
   const { tempMapList } = useUserChannel()
 
@@ -85,11 +85,11 @@ export const useTreeSelect = ({ options, value, onChange }: UseTreeSelectProps) 
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: aoid disabledSyncedFolders as dependency
   const searchFolderInDropbox = useCallback(async () => {
-    if (!debouncedQuery) return
+    if (!debouncedQuery || !filterValue) return
 
     setIsSearching(true)
     const response = await fetch(
-      `/api/dropbox/folder-tree?token=${user.token}&search=${filterValue}`,
+      `/api/dropbox/folder-tree?token=${user.token}&search=${encodeURIComponent(filterValue.trim())}`,
       {
         method: 'GET',
         headers: {

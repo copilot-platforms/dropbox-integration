@@ -10,13 +10,14 @@ import type { Folder } from '@/features/sync/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import logger from '@/lib/logger'
 import { withRetry } from '@/lib/withRetry'
+import { replaceSpecialCharactersWithSpace, splitPathAndFolder } from '@/utils/filePath'
 
 export class DropboxService extends AuthenticatedDropboxService {
   async getFolderTree(req: NextRequest) {
     const search = req.nextUrl.searchParams.get('search')
     const dbxClient = this.dbxClient.getDropboxClient()
 
-    if (search) return await this.searchForFolder({ dbxClient, search })
+    if (search) return await this.searchForFolder({ dbxClient, search: decodeURIComponent(search) })
 
     // Now this call will be rooted in the Team Space
     const entries = await this.getFileEntriesFromDropbox({ dbxClient })
@@ -53,6 +54,7 @@ export class DropboxService extends AuthenticatedDropboxService {
     path: string,
     dbxClient: Dropbox,
   ) {
+    console.info('DropboxService#searchChildrenFolders :: Searching children folders')
     const isSharedFolder = !!folderResult.sharing_info?.shared_folder_id
     const prefixPath = isSharedFolder ? path : undefined
 
@@ -61,7 +63,7 @@ export class DropboxService extends AuthenticatedDropboxService {
       ? this.dbxClient.createDropboxClient(
           // create new Dropbox Client but not binded with class
           this.connectionToken.refreshToken,
-          folderResult.shared_folder_id,
+          folderResult.sharing_info?.shared_folder_id,
           DropboxClientType.NAMESPACE_ID,
         )
       : dbxClient
@@ -80,32 +82,58 @@ export class DropboxService extends AuthenticatedDropboxService {
    */
   async _searchForFolder({ dbxClient, search }: { dbxClient: Dropbox; search: string }) {
     logger.info('DropboxService#getFolderTree :: Searching folder in Dropbox... Query: ', search)
-    const searchResponse = await dbxClient.filesSearchV2({
-      query: search,
-      options: {
-        max_results: MAX_FETCH_DBX_SEARCH_LIMIT,
-      },
-    })
+    const sanitizedSearch = replaceSpecialCharactersWithSpace(search)
+    if (!sanitizedSearch) return []
 
-    if (searchResponse.status !== httpStatus.OK) {
-      throw new APIError('Cannot fetch the folders', searchResponse.status)
+    const { path, folder: query } = splitPathAndFolder(sanitizedSearch)
+    console.info({ path, query })
+
+    let tempPath = path
+    let folderResult: files.FolderMetadataReference | undefined
+
+    const formattedFolders: Partial<Folder>[] = []
+
+    if (query !== '') {
+      console.info('DropboxService#searchForFolder :: Query is available. Searching for folder')
+      const searchResponse = await dbxClient.filesSearchV2({
+        query,
+        options: {
+          max_results: MAX_FETCH_DBX_SEARCH_LIMIT,
+          path,
+        },
+      })
+
+      if (searchResponse.status !== httpStatus.OK) {
+        throw new APIError('Cannot fetch the folders', searchResponse.status)
+      }
+      const { folders, pathArray } = this.formatSearchResults(searchResponse.result.matches)
+      if (!pathArray.length) return folders
+
+      tempPath = pathArray[0]
+      const matchMetadata = searchResponse.result.matches[0].metadata
+      if (matchMetadata['.tag'] === 'other') return folders
+
+      formattedFolders.push(...folders)
+      const metadata = matchMetadata.metadata
+      folderResult = metadata['.tag'] === ObjectType.FOLDER ? metadata : undefined
+    } else {
+      console.info('DropboxService#searchForFolder :: Query is empty. Getting folder metadata')
+
+      const metaDataResp = await dbxClient.filesGetMetadata({ path: tempPath })
+      if (metaDataResp.status !== httpStatus.OK) {
+        throw new APIError('Cannot fetch the folders', metaDataResp.status)
+      }
+      const metaResult = metaDataResp.result
+      folderResult = metaResult['.tag'] === ObjectType.FOLDER ? metaResult : undefined
     }
 
-    const { folders, pathArray } = this.formatSearchResults(searchResponse.result.matches)
-    if (!pathArray.length) return folders
-
-    const matchMetadata = searchResponse.result.matches[0].metadata
-    if (matchMetadata['.tag'] === 'other') return folders
-    const folderResult = matchMetadata.metadata
-
-    const formattedFolders: Folder[] = []
-    if (folderResult['.tag'] === ObjectType.FOLDER) {
-      const childFolders = await this.searchChildrenFolders(folderResult, pathArray[0], dbxClient)
+    if (folderResult) {
+      const childFolders = await this.searchChildrenFolders(folderResult, tempPath, dbxClient)
       formattedFolders.push(...childFolders)
     }
 
     // return unique array
-    return [...new Map([...folders, ...formattedFolders].map((item) => [item.path, item])).values()]
+    return [...new Map(formattedFolders.map((item) => [item.path, item])).values()]
   }
 
   private async buildFolderTree(entries: files.ListFolderResult['entries']): Promise<Folder[]> {
