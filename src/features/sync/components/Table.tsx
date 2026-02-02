@@ -11,7 +11,6 @@ import { getCompanySelectorValue } from '@/features/sync/helper/sync.helper'
 import { useFolder } from '@/features/sync/hooks/useFolder'
 import { useRemoveChannelSync, useTable, useUpdateUserList } from '@/features/sync/hooks/useTable'
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
-import { generateRandomString } from '@/utils/random'
 
 const MappingTableStatus = ({
   status,
@@ -74,7 +73,7 @@ const MappingTableRow = ({ openConfirmDialog }: { openConfirmDialog: (id?: strin
     <>
       {tempMapList.length ? (
         tempMapList.map((mapItem, index) => (
-          <tr key={`${generateRandomString(8)}-${index}`}>
+          <tr key={mapItem?.id ?? mapItem?.tempId}>
             <td className="w-80 whitespace-nowrap px-6 py-2">
               <CopilotSelector
                 name="File channel"

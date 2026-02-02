@@ -123,6 +123,7 @@ export type MapList = {
   fileChannelId: string
   lastSyncedAt: Date | null
   syncedPercentage: number
+  tempId?: string
 }
 
 export const UpdateConnectionStatusSchema = z.object({
