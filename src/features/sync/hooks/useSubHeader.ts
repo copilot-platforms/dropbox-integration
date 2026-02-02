@@ -1,5 +1,6 @@
 import { useUserChannel } from '@/features/sync/hooks/useUserChannel'
 import { getFreshFolders } from '@/helper/table.helper'
+import { generateRandomString } from '@/utils/random'
 
 export const useSubHeader = () => {
   const { setUserChannel, tempMapList, folders } = useUserChannel()
@@ -24,6 +25,7 @@ export const useSubHeader = () => {
             fileChannelId: '',
             lastSyncedAt: null,
             syncedPercentage: 0,
+            tempId: `${generateRandomString(8)}`,
           },
         ],
         tempFolders: getFreshFolders(tempMapList, folders),
