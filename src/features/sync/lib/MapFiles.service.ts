@@ -240,6 +240,7 @@ export class MapFilesService extends AuthenticatedDropboxService {
           eq(channelSync.dbxAccountId, this.connectionToken.accountId),
           eq(channelSync.assemblyChannelId, assemblyChannelId),
           eq(channelSync.dbxRootPath, dbxRootPath),
+          isNull(channelSync.deletedAt),
         ),
       )
       .returning()
