@@ -1,4 +1,4 @@
-import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm'
+import { type InferInsertModel, type InferSelectModel, isNull, relations } from 'drizzle-orm'
 import {
   boolean,
   index,
@@ -38,10 +38,9 @@ export const channelSync = pgTable(
       table.dbxAccountId,
       table.deletedAt.nullsFirst(),
     ),
-    uniqueIndex('uq_channel_sync_channel_id_dbx_root_path').on(
-      table.assemblyChannelId,
-      table.dbxRootPath,
-    ),
+    uniqueIndex('uq_channel_sync__channel_id_dbx_root_path')
+      .on(table.assemblyChannelId, table.dbxRootPath)
+      .where(isNull(table.deletedAt)),
     index('idx_channel_sync_portal_id_deleted_at_created_at').on(
       table.portalId,
       table.createdAt.asc(),

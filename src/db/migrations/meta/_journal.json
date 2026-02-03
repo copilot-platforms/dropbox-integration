@@ -64,6 +64,13 @@
       "when": 1765258299790,
       "tag": "20251209053139_add_combined_index_in_channel_sync",
       "breakpoints": false
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1770117966182,
+      "tag": "20260203112606_add-uq-to-channel-sync",
+      "breakpoints": false
     }
   ]
 }
