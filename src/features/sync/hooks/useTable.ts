@@ -227,16 +227,15 @@ export const useRemoveChannelSync = () => {
   const { user } = useAuthContext()
   const { setUserChannel, tempMapList } = useUserChannel()
 
-  const [removeId, setRemoveId] = useState<string | undefined>()
   const { setDialogAttributes, toggleDialog } = useDialogContext()
 
-  const removeChannelSync = async () => {
+  const removeChannelSync = async (channelSyncId?: string) => {
     toggleDialog(false)
 
     const localMapList = tempMapList
     setUserChannel((prev) => ({
       ...prev,
-      tempMapList: prev.tempMapList.filter((item) => item.id !== removeId),
+      tempMapList: prev.tempMapList.filter((item) => item.id !== channelSyncId),
     }))
 
     try {
@@ -246,7 +245,7 @@ export const useRemoveChannelSync = () => {
         {},
         {
           body: JSON.stringify({
-            channelSyncId: removeId,
+            channelSyncId,
           }),
         },
       )
@@ -260,14 +259,12 @@ export const useRemoveChannelSync = () => {
   }
 
   const openConfirmDialog = (id?: string) => {
-    setRemoveId(id)
-
     setDialogAttributes((prev) => ({
       ...prev,
       isOpen: true,
       title: 'Remove channel sync',
       description: 'Are you sure you want to remove this channel sync?',
-      onConfirm: () => removeChannelSync(),
+      onConfirm: () => removeChannelSync(id),
     }))
   }
 
