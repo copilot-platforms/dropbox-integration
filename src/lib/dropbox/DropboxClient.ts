@@ -55,7 +55,7 @@ export class DropboxClient {
     return this.clientInstance
   }
 
-  async _manualFetch(
+  private async manualFetch(
     url: string,
     headers?: Record<string, string>,
     body?: NodeJS.ReadableStream | null,
@@ -166,7 +166,6 @@ export class DropboxClient {
       })
   }
 
-  manualFetch = this.wrapWithRetry(this._manualFetch)
   getAllFilesFolders = this.wrapWithRetry(this._getAllFilesFolders)
   downloadFile = this.wrapWithRetry(this._downloadFile)
   uploadFile = this.wrapWithRetry(this._uploadFile)
