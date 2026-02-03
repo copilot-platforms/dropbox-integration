@@ -38,7 +38,7 @@ export const channelSync = pgTable(
       table.dbxAccountId,
       table.deletedAt.nullsFirst(),
     ),
-    uniqueIndex('uq_channel_sync_channel_id_dbx_root_path')
+    uniqueIndex('uq_channel_sync__channel_id_dbx_root_path')
       .on(table.assemblyChannelId, table.dbxRootPath)
       .where(isNull(table.deletedAt)),
     index('idx_channel_sync_portal_id_deleted_at_created_at').on(

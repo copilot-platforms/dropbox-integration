@@ -71,6 +71,13 @@
       "when": 1770100689512,
       "tag": "20260203063809_modern_ironclad",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770114588344,
+      "tag": "20260203102948_add-uq-to-channel-sync",
+      "breakpoints": false
     }
   ]
 }
