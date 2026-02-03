@@ -2,8 +2,10 @@
 
 import Sentry from '@sentry/nextjs'
 import { DropboxResponseError } from 'dropbox'
+import httpStatus from 'http-status'
 import pRetry from 'p-retry'
 import type { StatusableError } from '@/errors/BaseServerError'
+import { sleep } from '@/utils/sleep'
 
 export const withRetry = async <Args extends unknown[], R>(
   fn: (...args: Args) => Promise<R>,
@@ -20,22 +22,17 @@ export const withRetry = async <Args extends unknown[], R>(
       try {
         return await fn(...args)
       } catch (error: unknown) {
-        let retryAfter: number | undefined, statusCode: number
+        // dropbox specific error and retry handling
         if (error instanceof DropboxResponseError) {
-          const retryTime = error.headers.get('retry-after') || error.headers['retry-after']
-          retryAfter = retryTime ? parseInt(retryTime, 10) : undefined
-          statusCode = error.status
-        } else {
-          const err = error as StatusableError
-          retryAfter = err.retryAfter
-          statusCode = err.status
-        }
+          const retryTime = error.headers.get('retry-after')
+          const retryAfter = retryTime ? parseInt(retryTime, 10) : undefined
 
-        if (statusCode === 429 && retryAfter) {
-          // If rate limit happens with retryAfter value from dropbox api. Wait
-          const waitMs = retryAfter * 1000
-          console.warn(`Rate limited. Waiting for ${retryAfter} seconds before retry...`)
-          await new Promise((resolve) => setTimeout(resolve, waitMs))
+          if (error.status === httpStatus.TOO_MANY_REQUESTS && retryAfter) {
+            // If rate limit happens with retryAfter value from dropbox api. Wait
+            const waitMs = retryAfter * 1000
+            console.warn(`Rate limited. Waiting for ${retryAfter} seconds before retry...`)
+            await sleep(waitMs)
+          }
         }
 
         // Hopefully now sentry doesn't report retry errors as well. We have enough triage issues as it is
@@ -65,15 +62,18 @@ export const withRetry = async <Args extends unknown[], R>(
       factor: 2, // Exponential factor for timeout delay. Tweak this if issues still persist
 
       onFailedAttempt: (error: { error: unknown; attemptNumber: number; retriesLeft: number }) => {
-        console.warn(
-          'Error from onFailedAttempt. Error: ',
-          JSON.stringify(error),
-          (error.error as StatusableError).status,
-        )
+        if (error.error instanceof DropboxResponseError) {
+          const errorStatus = error.error.status
+          if (
+            errorStatus !== httpStatus.TOO_MANY_REQUESTS &&
+            errorStatus !== httpStatus.INTERNAL_SERVER_ERROR
+          )
+            return
+        }
 
         if (
-          (error.error as StatusableError).status !== 429 &&
-          (error.error as StatusableError).status !== 500
+          (error.error as StatusableError).status !== httpStatus.TOO_MANY_REQUESTS &&
+          (error.error as StatusableError).status !== httpStatus.INTERNAL_SERVER_ERROR
         ) {
           return
         }
@@ -82,14 +82,23 @@ export const withRetry = async <Args extends unknown[], R>(
           error,
         )
       },
-      shouldRetry: (error: unknown) => {
-        // Typecasting because Copilot doesn't export an error class
-        const err = error as StatusableError
+      shouldRetry: (error: { error: unknown; attemptNumber: number; retriesLeft: number }) => {
+        if (error.error instanceof DropboxResponseError) {
+          const errorStatus = error.error.status
+          return (
+            errorStatus === httpStatus.TOO_MANY_REQUESTS ||
+            errorStatus === httpStatus.INTERNAL_SERVER_ERROR
+          )
+        }
 
-        console.warn('Error from shouldRetry. Error: ', JSON.stringify(err), 'status: ', err.status)
+        // Typecasting because Copilot doesn't export an error class
+        const err = error.error as StatusableError
 
         // Retry only if statusCode indicates a ratelimit or Internal Server Error
-        return err.status === 429 || err.status === 500
+        return (
+          err.status === httpStatus.TOO_MANY_REQUESTS ||
+          err.status === httpStatus.INTERNAL_SERVER_ERROR
+        )
       },
     },
   )

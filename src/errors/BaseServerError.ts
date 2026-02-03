@@ -1,6 +1,5 @@
 export interface StatusableError extends Error {
   status: number
-  retryAfter?: number
 }
 
 /**
@@ -11,18 +10,16 @@ export class BaseServerError extends Error {
   constructor(
     message: string,
     public readonly statusCode: number,
-    retryAfter?: number,
   ) {
     super(message)
     this.name = 'BaseServerError'
-    this.retryAfter = retryAfter
   }
 }
 
 export const baseServerErrorFactory = (name: string, message: string, statusCode: number) => {
   return class extends BaseServerError {
-    constructor(messageOverride?: string, retryAfter?: number) {
-      super(messageOverride || message, statusCode, retryAfter)
+    constructor(messageOverride?: string) {
+      super(messageOverride || message, statusCode)
       this.name = name
     }
   }
