@@ -1,3 +1,4 @@
+import { DropboxResponseError } from 'dropbox'
 import httpStatus from 'http-status'
 import { type NextRequest, NextResponse } from 'next/server'
 import z, { ZodError } from 'zod'
@@ -50,6 +51,11 @@ export const withErrorHandler = (handler: RequestHandler): RequestHandler => {
       } else if (error instanceof Error && error.message) {
         message = error.message
         logger.error('Error:', error)
+      } else if (error instanceof DropboxResponseError) {
+        message = error.error.error_summary || `DropboxResponseError: ${message}`
+        status = error.status
+
+        logger.error('DropboxResponseError:', error.error)
       } else {
         message = 'Something went wrong'
         logger.error(error)
