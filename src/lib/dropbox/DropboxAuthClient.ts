@@ -20,9 +20,10 @@ export class DropboxAuthClient {
     })
   }
 
-  refreshAccessToken(refreshToken: string) {
+  // @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
+  async refreshAccessToken(refreshToken: string) {
     this.authInstance.setRefreshToken(refreshToken)
-    this.authInstance.checkAndRefreshAccessToken()
+    return await this.authInstance.checkAndRefreshAccessToken() // returns promise
   }
 
   async _getAuthUrl(state: string) {

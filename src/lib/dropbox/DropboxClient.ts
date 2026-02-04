@@ -13,7 +13,7 @@ import { dropboxArgHeader } from '@/utils/header'
 
 export class DropboxClient {
   protected readonly clientInstance: Dropbox
-  private dbxAuthClient: DropboxAuthClient
+  readonly dbxAuthClient: DropboxAuthClient
 
   constructor(
     refreshToken: string,
@@ -27,17 +27,17 @@ export class DropboxClient {
   /**
    * Function returns the instance of Dropbox client after checking and refreshing (if required) the access token
    * @returns instance of Dropbox client
-   * @function checkAndRefreshAccessToken() in-built function that gets a fresh access token. Refresh token never expires unless revoked manually.
    */
   createDropboxClient(
     refreshToken: string,
     rootNamespaceId?: string | null,
     type: DropboxClientTypeValue = DropboxClientType.ROOT,
   ): Dropbox {
-    this.dbxAuthClient.refreshAccessToken(refreshToken)
+    this.dbxAuthClient.authInstance.setRefreshToken(refreshToken)
 
-    const options: { auth: DropboxAuth; pathRoot?: string } = {
+    const options: { auth: DropboxAuth; refreshToken: string; pathRoot?: string } = {
       auth: this.dbxAuthClient.authInstance,
+      refreshToken,
     }
 
     // If we have a root namespace, set the header
@@ -104,7 +104,15 @@ export class DropboxClient {
     return entries
   }
 
-  async _downloadFile(urlPath: string, filePath: string, rootNamespaceId: string) {
+  async _downloadFile({
+    urlPath,
+    filePath,
+    rootNamespaceId,
+  }: {
+    urlPath: string
+    filePath: string
+    rootNamespaceId: string
+  }) {
     const headers = {
       Authorization: `Bearer ${this.dbxAuthClient.authInstance.getAccessToken()}`,
       'Dropbox-API-Path-Root': dropboxArgHeader({
@@ -125,12 +133,17 @@ export class DropboxClient {
    * Description: this function streams the file to Dropbox. @param body is the readable stream of the file.
    * For the stream to work we need to add the Content-Type: 'application/octet-stream' in the headers.
    */
-  async _uploadFile(
-    urlPath: string,
-    filePath: string,
-    body: NodeJS.ReadableStream | null,
-    rootNamespaceId: string,
-  ): Promise<DropboxFileMetadata> {
+  async _uploadFile({
+    urlPath,
+    filePath,
+    body,
+    rootNamespaceId,
+  }: {
+    urlPath: string
+    filePath: string
+    body: NodeJS.ReadableStream | null
+    rootNamespaceId: string
+  }): Promise<DropboxFileMetadata> {
     const args = {
       path: filePath,
       autorename: false,
