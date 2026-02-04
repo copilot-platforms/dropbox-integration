@@ -80,10 +80,8 @@ export const initiateDropboxToAssemblySync = task({
     const mapFilesService = new MapFilesService(user, connectionToken)
 
     // 1. get all the files folder from dropbox
-    const dbxClient = new DropboxClient(
-      connectionToken.refreshToken,
-      connectionToken.rootNamespaceId,
-    ).getDropboxClient()
+    const dbx = new DropboxClient(connectionToken.refreshToken, connectionToken.rootNamespaceId)
+    const dbxClient = dbx.getDropboxClient()
 
     let dbxFiles = await dbxClient.filesListFolder({
       path: dbxRootPath,
@@ -94,6 +92,9 @@ export const initiateDropboxToAssemblySync = task({
 
     // 2. loop over the dropbox files
     while (dbxFiles.result.entries.length) {
+      // refresh access token for every batch
+      await dbx.dbxAuthClient.refreshAccessToken(connectionToken.refreshToken)
+
       const parsedDbxFiles = DropboxFileListFolderResultEntriesSchema.safeParse(
         dbxFiles.result.entries,
       )
@@ -174,6 +175,11 @@ export const handleChannelFileChanges = task({
   },
   run: async (payload: HandleChannelFilePayload) => {
     const { files, channelSyncId, dbxRootPath, assemblyChannelId, user, connectionToken } = payload
+
+    // refresh dropbox access token
+    const dbxAuth = new DropboxAuthClient()
+    await dbxAuth.refreshAccessToken(connectionToken.refreshToken)
+
     const mapFilesService = new MapFilesService(user, connectionToken)
     const mappedFiles = await mapFilesService.getAllFileMaps(
       and(
@@ -312,16 +318,16 @@ export const initiateAssemblyToDropboxSync = task({
 
     const { user, connectionToken, dbxRootPath, assemblyChannelId } = payload
     const mapFilesService = new MapFilesService(user, connectionToken)
-
-    // refresh dropbox access token
     const dbxAuth = new DropboxAuthClient()
-    dbxAuth.refreshAccessToken(connectionToken.refreshToken)
 
     // 1. get al the files from the assembly
     const copilotApi = new CopilotAPI(payload.user.token)
     let files = await copilotApi.listFiles(payload.assemblyChannelId)
 
     while (files.data.length) {
+      // refresh dropbox access token for every batch
+      await dbxAuth.refreshAccessToken(connectionToken.refreshToken)
+
       // 2. check and filter out all the mapped files
       const filteredEntries = await mapFilesService.checkAndFilterAssemblyFiles(
         files.data,

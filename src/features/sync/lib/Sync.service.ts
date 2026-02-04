@@ -264,6 +264,7 @@ export class SyncService extends AuthenticatedDropboxService {
       }
     }
   }
+
   private async uploadFileInAssembly(dbxPath: string, uploadUrl: string, copilotApi: CopilotAPI) {
     logger.info('SyncService#uploadFileInAssembly :: Uploading file to Assembly', dbxPath)
 
@@ -271,11 +272,11 @@ export class SyncService extends AuthenticatedDropboxService {
     const fileMetaData = await dbx.filesDownload({ path: dbxPath }) // get metadata for the files
     logger.info('SyncService#uploadFileInAssembly :: File metadata downloaded', dbxPath)
 
-    const downloadBody = await this.dbxClient.downloadFile(
-      DBX_URL_PATH.fileDownload,
-      dbxPath,
-      z.string().parse(this.connectionToken.rootNamespaceId),
-    )
+    const downloadBody = await this.dbxClient.downloadFile({
+      urlPath: DBX_URL_PATH.fileDownload,
+      filePath: dbxPath,
+      rootNamespaceId: z.string().parse(this.connectionToken.rootNamespaceId),
+    })
     logger.info('SyncService#uploadFileInAssembly :: Found downloadBody', Boolean(downloadBody))
 
     // upload file to assembly
@@ -339,6 +340,7 @@ export class SyncService extends AuthenticatedDropboxService {
       portalId: this.user.portalId,
       assemblyFileId: file.id,
     }
+
     const dbxFileInfo = await this.createAndUploadFileInDropbox(dbxRootPath, file.object, file)
     await this.mapFilesService.insertFileMap({
       ...filePayload,
@@ -423,12 +425,12 @@ export class SyncService extends AuthenticatedDropboxService {
       // download file from Assembly
       const resp = await fetch(file.downloadUrl)
       // upload file to dropbox
-      const dbxResponse = await this.dbxClient.uploadFile(
-        DBX_URL_PATH.fileUpload,
-        path,
-        resp.body,
-        z.string().parse(this.connectionToken.rootNamespaceId),
-      )
+      const dbxResponse = await this.dbxClient.uploadFile({
+        urlPath: DBX_URL_PATH.fileUpload,
+        filePath: path,
+        body: resp.body,
+        rootNamespaceId: z.string().parse(this.connectionToken.rootNamespaceId),
+      })
       logger.info('SyncService#uploadFileInDropbox :: File uploaded to', path)
       return {
         dbxFileId: dbxResponse.id,

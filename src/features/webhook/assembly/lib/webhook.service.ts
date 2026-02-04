@@ -102,6 +102,9 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     logger.info('AssemblyWebhookService#handleFileCreated :: Filtered entries', filteredEntries)
 
     if (filteredEntries.length) {
+      // refresh dropbox access token
+      await this.dbxClient.dbxAuthClient.refreshAccessToken(this.connectionToken.refreshToken)
+
       await syncAssemblyFileToDropbox.batchTrigger(filteredEntries)
       await this.updateLastSynced(channelSyncId)
     }
@@ -169,6 +172,9 @@ export class AssemblyWebhookService extends AuthenticatedDropboxService {
     const user = this.user
     const connectionToken = this.connectionToken
     if (file) {
+      // refresh dropbox access token
+      await this.dbxClient.dbxAuthClient.refreshAccessToken(this.connectionToken.refreshToken)
+
       const payload: AssemblyToDropboxSyncFilesPayload = {
         file: CopilotFileWithObjectSchema.parse(file),
         opts: {
