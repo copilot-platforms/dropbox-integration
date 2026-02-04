@@ -3,6 +3,7 @@ import status from 'http-status'
 import { type NextRequest, NextResponse } from 'next/server'
 import env from '@/config/server.env'
 import { processDropboxChanges } from '@/trigger/processFileSync'
+import { sleep } from '@/utils/sleep'
 
 export const handleWebhookUrlVerification = (req: NextRequest) => {
   try {
@@ -24,6 +25,8 @@ export const handleWebhookUrlVerification = (req: NextRequest) => {
 }
 
 export const handleWebhookEvents = async (req: NextRequest) => {
+  await sleep(800) // prevent ping-pong case of webhooks
+
   const signature = req.headers.get('X-Dropbox-Signature')
   if (!signature)
     return NextResponse.json({ error: 'Missing signature' }, { status: status.BAD_REQUEST })
