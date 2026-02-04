@@ -1,5 +1,6 @@
 import * as p from 'node:path'
 import dayjs from 'dayjs'
+import unorm from 'unorm'
 import { ObjectType } from '@/db/constants'
 
 export function buildPathArray(path: string): string[] {
@@ -81,17 +82,10 @@ export function sanitizePath(path: string) {
 }
 
 export function sanitizeFileNameForAssembly(filename: string): string {
-  const lastDotIndex = filename.lastIndexOf('.')
-
-  // if there's no extension, sanitize the whole filename
-  if (lastDotIndex === -1) {
-    return filename.replace(/[^a-zA-Z0-9_-]/g, ' ')
-  }
-
-  const name = filename.slice(0, lastDotIndex)
-  const extension = filename.slice(lastDotIndex + 1)
-
-  const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, ' ')
-
-  return `${sanitizedName}.${extension}`
+  return unorm
+    .nfd(filename) // decompose accents
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+    .replace(/[^a-zA-Z0-9._-]/g, '_') // replace special chars with _
+    .replace(/_+/g, '_') // collapse multiple _
+    .replace(/^_+|_+$/g, '') // trim _ from ends
 }
