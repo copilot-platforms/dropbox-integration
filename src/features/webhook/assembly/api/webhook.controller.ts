@@ -8,8 +8,10 @@ import { AssemblyWebhookService } from '@/features/webhook/assembly/lib/webhook.
 import { DISPATCHABLE_HANDLEABLE_EVENT } from '@/features/webhook/assembly/utils/types'
 import User from '@/lib/copilot/models/User.model'
 import logger from '@/lib/logger'
+import { sleep } from '@/utils/sleep'
 
 export const handleWebhookEvent = async (req: NextRequest) => {
+  await sleep(800) // prevent ping-pong case of webhooks
   const token = req.nextUrl.searchParams.get('token')
 
   const user = await User.authenticate(token)
