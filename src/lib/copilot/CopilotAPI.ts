@@ -43,6 +43,7 @@ import {
 } from '@/lib/copilot/types'
 import logger from '@/lib/logger'
 import { withRetry } from '@/lib/withRetry'
+import { sanitizeFileNameForAssembly } from '@/utils/filePath'
 
 export class CopilotAPI {
   readonly copilot: SDK
@@ -191,7 +192,7 @@ export class CopilotAPI {
     const createFileResponse = await this.copilot.createFile({
       fileType,
       requestBody: {
-        path,
+        path: sanitizeFileNameForAssembly(path),
         channelId,
       },
     })

@@ -79,3 +79,19 @@ export function splitPathAndFolder(fullPath: string): { path: string; folder: st
 export function sanitizePath(path: string) {
   return path.replace(/^\/+/, '')
 }
+
+export function sanitizeFileNameForAssembly(filename: string): string {
+  const lastDotIndex = filename.lastIndexOf('.')
+
+  // if there's no extension, sanitize the whole filename
+  if (lastDotIndex === -1) {
+    return filename.replace(/[^a-zA-Z0-9_-]/g, ' ')
+  }
+
+  const name = filename.slice(0, lastDotIndex)
+  const extension = filename.slice(lastDotIndex + 1)
+
+  const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, ' ')
+
+  return `${sanitizedName}.${extension}`
+}
