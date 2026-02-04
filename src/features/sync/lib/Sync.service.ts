@@ -191,7 +191,7 @@ export class SyncService extends AuthenticatedDropboxService {
         error.status === 400 &&
         error.body.message === 'Folder already exists'
       ) {
-        console.info({ message: error.body.message })
+        console.info({ message: error.body.message, path: itemPath })
         await this.handleFolderCreatedCase(
           lastItem,
           tempFileType,
@@ -202,7 +202,7 @@ export class SyncService extends AuthenticatedDropboxService {
         return
       }
       console.error(
-        `SyncService#createAndUploadFileToAssembly. Upload failed. Channel ID: ${assemblyChannelId}`,
+        `SyncService#createAndUploadFileToAssembly. Upload failed. Channel ID: ${assemblyChannelId}. Path: ${itemPath}`,
       )
       throw error
     }
