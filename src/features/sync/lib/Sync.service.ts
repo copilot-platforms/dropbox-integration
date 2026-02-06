@@ -1,13 +1,13 @@
 import { and, eq } from 'drizzle-orm'
 import { DropboxResponseError } from 'dropbox'
 import httpStatus from 'http-status'
-import { ApiError as CopilotApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import fetch from 'node-fetch'
 import z from 'zod'
 import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
 import APIError from '@/errors/APIError'
+import type { CopilotApiError } from '@/errors/BaseServerError'
 import { DBX_URL_PATH } from '@/features/sync/constant'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type {
@@ -185,11 +185,11 @@ export class SyncService extends AuthenticatedDropboxService {
         `SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}. File upload success. Type: ${tempFileType}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${lastItem ? entry.id : null}`,
       )
       await this.mapFilesService.updateChannelMapSyncedFilesCount(channelSyncId)
-    } catch (error: unknown) {
+    } catch (err: unknown) {
+      const error = err as CopilotApiError // typecasting as Assembly doesn't export an error class
       if (
-        error instanceof CopilotApiError &&
-        error.status === 400 &&
-        error.body.message === 'Folder already exists'
+        error.status === httpStatus.BAD_REQUEST &&
+        error.body?.message === 'Folder already exists'
       ) {
         console.info({ message: error.body.message, path: itemPath })
         await this.handleFolderCreatedCase(

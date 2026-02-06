@@ -1,6 +1,5 @@
 import { and, asc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import httpStatus from 'http-status'
-import { ApiError } from 'node_modules/copilot-node-sdk/dist/codegen/api'
 import z from 'zod'
 import db from '@/db'
 import { ObjectType } from '@/db/constants'
@@ -17,6 +16,7 @@ import {
   fileFolderSync,
 } from '@/db/schema/fileFolderSync.schema'
 import APIError from '@/errors/APIError'
+import type { StatusableError } from '@/errors/BaseServerError'
 import type {
   DropboxFileListFolderResultEntries,
   MapList,
@@ -488,8 +488,10 @@ export class MapFilesService extends AuthenticatedDropboxService {
       logger.info('MapFilesService#formatChannelMap :: Formatted channel map', formattedChannelInfo)
 
       return formattedChannelInfo
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === httpStatus.BAD_REQUEST) {
+    } catch (err: unknown) {
+      const error = err as StatusableError // typecasting as Assembly doesn't export an error class
+
+      if (error && error.status === httpStatus.BAD_REQUEST) {
         console.info('Soft delete channel map and make it inactive')
         await this.deleteChannelMapById(channelMap.id)
       }

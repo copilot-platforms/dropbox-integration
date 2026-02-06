@@ -2,6 +2,13 @@ export interface StatusableError extends Error {
   status: number
 }
 
+export interface CopilotApiError extends Error {
+  status: number
+  body?: {
+    message: string
+  }
+}
+
 /**
  * Base error class for Server components / actions / API routes
  */
