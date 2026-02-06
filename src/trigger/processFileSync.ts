@@ -403,6 +403,7 @@ export const updateAssemblyFileInDropbox = task({
 
 export const resyncFailedFilesInAssembly = task({
   id: 'resync-failed-files-in-assembly',
+  machine,
   queue: {
     name: 'resync-failed-files-in-assembly',
     concurrencyLimit: 5,

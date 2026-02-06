@@ -32,7 +32,7 @@ export class ResyncService {
 
     for (const portalId in failedSyncWorkspaceMap) {
       const failedSyncsForPortal = failedSyncWorkspaceMap[portalId]
-      await resyncFailedFilesInAssembly.trigger({
+      resyncFailedFilesInAssembly.trigger({
         portalId,
         failedSyncs: failedSyncsForPortal,
       })
