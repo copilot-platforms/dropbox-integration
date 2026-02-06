@@ -23,6 +23,8 @@ import {
   CopilotFileCreateSchema,
   type CopilotFileList,
   CopilotFileListSchema,
+  CopilotFileRetrieve,
+  CopilotFileRetrieveSchema,
   type CopilotListArgs,
   type CopilotPrice,
   CopilotPriceSchema,
@@ -223,6 +225,11 @@ export class CopilotAPI {
     return CopilotFileListSchema.parse(list)
   }
 
+  async _retrieveFile(id: string): Promise<CopilotFileRetrieve> {
+    const file = await this.copilot.retrieveFile({ id })
+    return CopilotFileRetrieveSchema.parse(file)
+  }
+
   async _retrieveFileChannel(id: string) {
     const fileChannel = await this.copilot.retrieveFileChannel({ id })
     return CopilotFileChannelRetrieveSchema.parse(fileChannel)
@@ -260,6 +267,7 @@ export class CopilotAPI {
   uploadFile = this.wrapWithRetry(this._uploadFile)
   deleteFile = this.wrapWithRetry(this._deleteFile)
   listFiles = this.wrapWithRetry(this._listFiles)
+  retrieveFile = this.wrapWithRetry(this._retrieveFile)
   retrieveFileChannel = this.wrapWithRetry(this._retrieveFileChannel)
   listFileChannels = this.wrapWithRetry(this._listFileChannels)
 }
