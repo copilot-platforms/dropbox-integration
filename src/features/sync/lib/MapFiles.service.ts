@@ -16,7 +16,6 @@ import {
   fileFolderSync,
 } from '@/db/schema/fileFolderSync.schema'
 import APIError from '@/errors/APIError'
-import type { StatusableError } from '@/errors/BaseServerError'
 import type {
   DropboxFileListFolderResultEntries,
   MapList,
@@ -30,6 +29,7 @@ import {
 } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import logger from '@/lib/logger'
+import { isAssemblyApiError } from '@/utils/assemblyError'
 
 export class MapFilesService extends AuthenticatedDropboxService {
   async getSingleFileMap(where: WhereClause): Promise<FileSyncSelectType | undefined> {
@@ -488,10 +488,8 @@ export class MapFilesService extends AuthenticatedDropboxService {
       logger.info('MapFilesService#formatChannelMap :: Formatted channel map', formattedChannelInfo)
 
       return formattedChannelInfo
-    } catch (err: unknown) {
-      const error = err as StatusableError // typecasting as Assembly doesn't export an error class
-
-      if (error && error.status === httpStatus.BAD_REQUEST) {
+    } catch (error: unknown) {
+      if (isAssemblyApiError(error) && error.status === httpStatus.BAD_REQUEST) {
         console.info('Soft delete channel map and make it inactive')
         await this.deleteChannelMapById(channelMap.id)
       }

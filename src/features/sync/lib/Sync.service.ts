@@ -7,7 +7,6 @@ import { ObjectType, type ObjectTypeValue } from '@/db/constants'
 import type { DropboxConnectionTokens } from '@/db/schema/dropboxConnections.schema'
 import { type FileSyncCreateType, fileFolderSync } from '@/db/schema/fileFolderSync.schema'
 import APIError from '@/errors/APIError'
-import type { CopilotApiError } from '@/errors/BaseServerError'
 import { DBX_URL_PATH } from '@/features/sync/constant'
 import { MapFilesService } from '@/features/sync/lib/MapFiles.service'
 import type {
@@ -23,6 +22,7 @@ import type { CopilotFileRetrieve } from '@/lib/copilot/types'
 import AuthenticatedDropboxService from '@/lib/dropbox/AuthenticatedDropbox.service'
 import logger from '@/lib/logger'
 import { bidirectionalMasterSync } from '@/trigger/processFileSync'
+import { isAssemblyApiError } from '@/utils/assemblyError'
 import { appendDateTimeToFilePath, buildPathArray, getPathFromRoot } from '@/utils/filePath'
 
 export class SyncService extends AuthenticatedDropboxService {
@@ -185,11 +185,11 @@ export class SyncService extends AuthenticatedDropboxService {
         `SyncService#createAndUploadFileToAssembly. Channel ID: ${assemblyChannelId}. File upload success. Type: ${tempFileType}. File ID: ${filePayload.assemblyFileId}. Dbx fileId: ${lastItem ? entry.id : null}`,
       )
       await this.mapFilesService.updateChannelMapSyncedFilesCount(channelSyncId)
-    } catch (err: unknown) {
-      const error = err as CopilotApiError // typecasting as Assembly doesn't export an error class
+    } catch (error: unknown) {
       if (
+        isAssemblyApiError(error) &&
         error.status === httpStatus.BAD_REQUEST &&
-        error.body?.message === 'Folder already exists'
+        error.body.message === 'Folder already exists'
       ) {
         console.info({ message: error.body.message, path: itemPath })
         await this.handleFolderCreatedCase(
