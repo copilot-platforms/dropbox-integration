@@ -85,6 +85,15 @@ export function sanitizeFileNameForAssembly(filename: string): string {
   return unorm
     .nfd(filename) // decompose accents
     .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+    .replace(/[^a-zA-Z0-9._/() -]/g, '_') // replace special chars with _
+    .replace(/_+/g, '_') // collapse multiple _
+    .replace(/^_+|_+$/g, '') // trim _ from ends
+}
+
+export function getFaultyPath(filename: string): string {
+  return unorm
+    .nfd(filename) // decompose accents
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
     .replace(/[^a-zA-Z0-9._-]/g, '_') // replace special chars with _
     .replace(/_+/g, '_') // collapse multiple _
     .replace(/^_+|_+$/g, '') // trim _ from ends
