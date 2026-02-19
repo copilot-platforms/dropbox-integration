@@ -19,6 +19,11 @@ export const handleWebhookEvent = async (req: NextRequest) => {
   const dropboxConnectionService = new DropboxConnectionsService(user)
   const connection = await dropboxConnectionService.getConnectionForWorkspace()
 
+  if (!connection.status) {
+    console.info(`Sync is not enabled for this workspace. Skipping webhook event`)
+    return NextResponse.json({})
+  }
+
   if (!connection.refreshToken) throw new APIError('No refresh token found', httpStatus.NOT_FOUND)
   if (!connection.accountId) throw new APIError('No accountId found', httpStatus.NOT_FOUND)
 
