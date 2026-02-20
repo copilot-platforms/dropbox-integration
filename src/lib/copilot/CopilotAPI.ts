@@ -23,7 +23,7 @@ import {
   CopilotFileCreateSchema,
   type CopilotFileList,
   CopilotFileListSchema,
-  CopilotFileRetrieve,
+  type CopilotFileRetrieve,
   CopilotFileRetrieveSchema,
   type CopilotListArgs,
   type CopilotPrice,
@@ -191,10 +191,13 @@ export class CopilotAPI {
     channelId: string,
     fileType: ObjectTypeValue,
   ): Promise<CreateFileType> {
+    const saniztedPath = sanitizeFileNameForAssembly(path)
+    console.info(`CopilotAPI#_createFile. Path: ${saniztedPath}`)
+
     const createFileResponse = await this.copilot.createFile({
       fileType,
       requestBody: {
-        path: sanitizeFileNameForAssembly(path),
+        path: saniztedPath,
         channelId,
       },
     })
@@ -220,8 +223,16 @@ export class CopilotAPI {
     return await this.copilot.deleteFile({ id })
   }
 
-  async _listFiles(channelId: string, nextToken?: string): Promise<CopilotFileList> {
-    const list = await this.copilot.listFiles({ channelId, nextToken, limit: MAX_FILES_LIMIT })
+  async _listFiles(
+    channelId: string,
+    nextToken?: string,
+    customLimit?: number,
+  ): Promise<CopilotFileList> {
+    const list = await this.copilot.listFiles({
+      channelId,
+      nextToken,
+      limit: customLimit || MAX_FILES_LIMIT,
+    })
     return CopilotFileListSchema.parse(list)
   }
 
