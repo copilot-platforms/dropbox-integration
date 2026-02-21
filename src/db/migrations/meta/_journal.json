@@ -71,6 +71,13 @@
       "when": 1770117966182,
       "tag": "20260203112606_add-uq-to-channel-sync",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1771411996739,
+      "tag": "20260218105316_add_root_namespace_id_in_connection_table",
+      "breakpoints": false
     }
   ]
 }
