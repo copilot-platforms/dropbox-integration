@@ -23,6 +23,7 @@ export async function getDropboxChanges(
               channelSyncId,
             )
             if (!mappedFile) return null
+            if (!mappedFile.dbxFileId) return null // todo: if id not found. Get the id
             return { ...entry, id: mappedFile.dbxFileId }
           }
           return entry
@@ -35,8 +36,8 @@ export async function getDropboxChanges(
     if (!parsed.success) {
       console.info(`Entries payload: ${JSON.stringify(entriesWithId)}`)
       console.error('Invalid Dropbox response entries:', parsed.error)
-      return
-      // throw new Error('Invalid Dropbox entries format')
+      // return
+      throw new Error('Invalid Dropbox entries format')
     }
 
     const filtered = parsed.data.filter((entry) =>
