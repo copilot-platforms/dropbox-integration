@@ -17,8 +17,8 @@ globalThis._drizzleDb ??= drizzle(
     prepare: false,
     debug: true,
     max: 72,
-    idle_timeout: 20,
-    connect_timeout: 15,
+    idle_timeout: 10,
+    connect_timeout: 60,
   }),
   {
     casing: 'snake_case',
