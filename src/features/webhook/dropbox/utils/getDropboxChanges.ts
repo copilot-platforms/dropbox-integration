@@ -33,8 +33,10 @@ export async function getDropboxChanges(
     const parsed = DropboxFileListFolderResultEntriesSchema.safeParse(entriesWithId)
 
     if (!parsed.success) {
+      console.info(`Entries payload: ${JSON.stringify(entriesWithId)}`)
       console.error('Invalid Dropbox response entries:', parsed.error)
-      throw new Error('Invalid Dropbox entries format')
+      return
+      // throw new Error('Invalid Dropbox entries format')
     }
 
     const filtered = parsed.data.filter((entry) =>
