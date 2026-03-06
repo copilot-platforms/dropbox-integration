@@ -12,6 +12,7 @@ const ServerEnvSchema = z.object({
   DROPBOX_SCOPES: z.string().min(1),
   DROPBOX_API_URL: z.url(),
   TRIGGER_MACHINE: TriggerMachineSchema,
+  FILE_MIGRATION_PORTAL_ID: z.string(),
   CRON_SECRET: z.string().min(1),
 })
 
