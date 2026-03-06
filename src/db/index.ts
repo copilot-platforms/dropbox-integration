@@ -16,8 +16,8 @@ globalThis._drizzleDb ??= drizzle(
   postgres(env.DATABASE_URL, {
     prepare: false,
     debug: true,
-    max: 5,
-    idle_timeout: 20,
+    max: 3,
+    idle_timeout: 10,
     connect_timeout: 60,
   }),
   {
