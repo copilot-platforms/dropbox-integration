@@ -17,7 +17,6 @@ globalThis._drizzleDb ??= drizzle(
     prepare: false,
     debug: true,
     max: 72,
-    idle_timeout: 10,
     connect_timeout: 60,
   }),
   {
